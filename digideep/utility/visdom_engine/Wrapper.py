@@ -1,4 +1,5 @@
-""" https://github.com/pytorch/tnt
+""" This module is highly inspired by: https://github.com/pytorch/tnt
+
 BSD 3-Clause License
 
 Copyright (c) 2017- Sergey Zagoruyko,
@@ -40,17 +41,17 @@ from digideep.utility.visdom_engine.Instance import VisdomInstance
 class VisdomWrapper(object):
     """
         This class does not need to be serializable.
-        Can be given among the `kwargs` params:
         
-        * 'opts'
-        * 'env'
+        Args:
+            command: The visdom command.
+            win: The window name.
+            kwargs: The dictionary of keyword arguments. May include ``opts`` and ``env``.
+        
+        Note:
+            If you want to be consistent between different runs, you must assign 'win' as input.
 
-        If you want to be consistent between different runs,
-        you must use assign 'win' as input.
-
-
-        For example:
-            v = VisdomWrapper('line', win='TestLoss', opts={'title':'TestLoss'}, X=np.array([1]), Y=np.array([4]))
+        Example:
+            >>> v = VisdomWrapper('line', win='TestLoss', opts={'title':'TestLoss'}, X=np.array([1]), Y=np.array([4]))
     """
     def __init__(self, command, win, **kwargs):
         self.viz = VisdomInstance.getVisdomInstance()
@@ -79,7 +80,7 @@ class VisdomWrapper(object):
 
 class VisdomWrapperPlot(VisdomWrapper):
     """
-    In the append function, user should provide X=np.array(...), Y=np.array(...)
+    In the append function, user should provide ``X=np.array(...), Y=np.array(...)``
     """
     def __init__(self, plot_type, win, **kwargs):
         super(VisdomWrapperPlot, self).__init__(plot_type, win=win, **kwargs)
