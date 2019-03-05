@@ -5,7 +5,7 @@ Usage
 Training/Replaying
 ------------------
 
-.. code-block:: bash
+.. code-block:: text
     :caption: Command-line arguments
 
     $ python -m digideep.main --help
@@ -68,7 +68,7 @@ Training/Replaying
 Playing for Debugging
 ---------------------
 
-.. code-block:: bash
+.. code-block:: text
     :caption: Command-line arguments
 
     $ python -m digideep.environment.play --help
