@@ -68,7 +68,7 @@ Training/Replaying
 Playing for Debugging
 ---------------------
 
-..code-block:: bash
+.. code-block:: bash
     :caption: Command-line arguments
 
     $ python -m digideep.environment.play --help
