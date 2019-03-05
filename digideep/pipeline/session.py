@@ -125,8 +125,8 @@ class Session(object):
         if not self.is_loading:
             try:
                 get_module(self.args["params"])
-            except:
-                logger.fatal("Neither a checkpoint nor a valid params file are specified!")
+            except Exception as ex:
+                logger.fatal("While importing user-specified params:", ex)
                 exit()
 
         print(':: The session will be stored in ' + self.state['path_session'])

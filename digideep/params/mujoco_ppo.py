@@ -31,6 +31,8 @@ cpanel = OrderedDict()
 # 'HalfCheetah-v2'
 # 'DMBenchHumanoidStand-v0' | 'DMBenchCheetahRun-v0'
 cpanel["model_name"] = 'Ant-v2'  # MuJoCo Env
+cpanel["env_module"] = ''
+# Other possible modules: roboschool | pybullet_envs
 
 # General Parameters
 # num_frames = 10e6  # Number of frames to train
@@ -89,7 +91,8 @@ def gen_params(cpanel):
     params = {}
     # Environment
     params["env"] = {}
-    params["env"]["name"] = cpanel["model_name"]
+    params["env"]["name"]   = cpanel["model_name"]
+    params["env"]["module"] = cpanel["env_module"]
 
     params["env"]["wrappers"] = {"add_monitor": cpanel["add_monitor"], 
                                 "add_time_step": cpanel["add_time_step"],

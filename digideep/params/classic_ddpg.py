@@ -25,11 +25,10 @@ from collections import OrderedDict
 
 cpanel = OrderedDict()
 
-cpanel["model_name"] = 'Pendulum-v0'        # Classic Control Env
 # Acrobot-v1 | CartPole-v1 | MountainCarContinuous-v0
-
-# cpanel["model_name"] = 'DMBenchHumanoidStand-v0'    # dm_control wrapped environment
-# cpanel["model_name"] = 'DMBenchCheetahRun-v0'    # dm_control wrapped environment
+cpanel["model_name"] = 'Pendulum-v0'        # Classic Control Env
+cpanel["env_module"] = ''
+# Other possible modules: roboschool | pybullet_envs
 
 # General Parameters
 # num_frames = 10e6  # Number of frames to train
@@ -91,7 +90,8 @@ def gen_params(cpanel):
     params = {}
     # Environment
     params["env"] = {}
-    params["env"]["name"] = cpanel["model_name"]
+    params["env"]["name"]   = cpanel["model_name"]
+    params["env"]["module"] = cpanel["env_module"]
 
     params["env"]["wrappers"] = {"add_monitor": cpanel["add_monitor"], 
                                 "add_time_step": cpanel["add_time_step"],

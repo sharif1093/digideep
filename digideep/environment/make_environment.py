@@ -19,6 +19,8 @@ from digideep.environment.wrappers import VecFrameStackAxis
 from digideep.environment.wrappers import VecNormalize
 from digideep.environment.wrappers import VecSaveState
 
+from digideep.utility.toolbox import get_module
+
 from digideep.utility.logging import logger
 from gym import spaces
 
@@ -26,22 +28,8 @@ from gym import spaces
 ###      Importing Environment Packages      ###
 ################################################
 import gym
-
-# By importing "dmc2gym" the __init__ file of the package
-# will be called and will register all the DM environments.
+# Even though we don't need dm_control to be loaded here, it helps in initializing glfw.
 import digideep.environment.dmc2gym
-
-try:
-    import roboschool
-except ImportError:
-    # logger.warn('roboschool is missing.')
-    pass
-
-try:
-    import pybullet_envs
-except ImportError:
-    # logger.warn('pybullet_envs is missing.')
-    pass
 ################################################
 
 
@@ -94,6 +82,14 @@ class MakeEnvironment:
         self.seed = seed
         self.session = session
         self.params  = params
+        
+        # Load user-defined modules in which the environment will be registered:
+        if params["module"]:
+            try:
+                get_module(params["module"])
+            except Exception as ex:
+                logger.fatal("While importing user module:", ex)
+                exit()
         
     def make_env(self, rank, force_no_monitor=False):
         import sys # For debugging

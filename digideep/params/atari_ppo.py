@@ -29,6 +29,7 @@ cpanel = OrderedDict()
 
 # Asteroids-v4 | AirRaid-v4 | Alien-v4 | VideoPinball-v4
 cpanel["model_name"] = 'PongNoFrameskip-v4' # Atari Env
+cpanel["env_module"] = ''
 
 # General Parameters
 # num_frames = 10e6  # Number of frames to train
@@ -87,7 +88,8 @@ def gen_params(cpanel):
     params = {}
     # Environment
     params["env"] = {}
-    params["env"]["name"] = cpanel["model_name"]
+    params["env"]["name"]   = cpanel["model_name"]
+    params["env"]["module"] = cpanel["env_module"]
 
     params["env"]["wrappers"] = {"add_monitor": cpanel["add_monitor"], 
                                 "add_time_step": cpanel["add_time_step"],
