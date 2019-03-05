@@ -52,6 +52,8 @@ extensions = [
     # 'sphinxcontrib.katex',
 ]
 
+autodoc_mock_imports = ["numpy", "torch", "visdom"]
+
 # katex_options = r'''
 # delimiters : [
 #    {left: "$$", right: "$$", display: true},
