@@ -1,0 +1,14 @@
+**/__pycache__
+*.pyc
+*.log
+
+**/.ipynb_checkpoints
+**/.idea
+**/.vscode
+
+## Ignoring mujoco-related files.
+**/MUJOCO_LOG.TXT
+**/mjkey.txt
+
+## Ignoring Sphinx doc files
+doc/_build
