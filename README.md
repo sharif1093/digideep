@@ -48,10 +48,10 @@ The features of Digideep can be listed as following:
 
 ## License
 
-This code is under BSD 2-clause (FreeBSD/Simplified) license. See [[LICENSE]].
+This code is under BSD 2-clause (FreeBSD/Simplified) license. See [LICENSE](LICENSE).
 
 ## Acknowledgement
 
-I would like to appreciate authors of `OpenAI baselines <https://github.com/openai/baselines>`__ and 
-`pytorch-a2c-ppo-acktr <https://github.com/ikostrikov/pytorch-a2c-ppo-acktr>`__ projects, by which
+I would like to appreciate authors of [OpenAI baselines](https://github.com/openai/baselines) and 
+[pytorch-a2c-ppo-acktr](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr) projects, by which
 this project is highly inspired.
