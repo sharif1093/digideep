@@ -52,7 +52,7 @@ extensions = [
     # 'sphinxcontrib.katex',
 ]
 
-autodoc_mock_imports = ["numpy", "torch", "visdom", "gym", "dm_control"]
+autodoc_mock_imports = ["numpy", "torch", "visdom", "gym", "dm_control", "cv2"]
 
 # katex_options = r'''
 # delimiters : [
