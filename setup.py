@@ -13,7 +13,8 @@ setuptools.setup(
         "colorama>=0.4.1", "psutil>=5.5.1", "pyyaml>=3.13",
         "sphinxcontrib-programoutput>=0.13"
     ],
-    packages=setuptools.find_packages(),
+    # packages=setuptools.find_packages(),
+    packages=['digideep'],
     license="",
     classifiers=[
         "Programming Language :: Python :: 3",
