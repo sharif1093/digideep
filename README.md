@@ -9,8 +9,6 @@ some debugging tools and guidelines for implementing new methods. Digideep has t
 * DDPG - Deep Deterministic Policy Gradient
 * PPO - Proximal Policy Optimization
 
-For instructions on installation and usage see the documentation at https://digideep.readthedocs.io.
-
 Please use the following BibTeX entry to cite this repository in your publications:
 
 ```bibtex
