@@ -11,8 +11,7 @@ setuptools.setup(
     python_requires='>=3.4.0',
     url="https://github.com/sharif1093/digideep",
     install_requires=[
-        "colorama>=0.4.1", "psutil>=5.5.1", "pyyaml>=3.13",
-        "sphinxcontrib-programoutput>=0.13"
+        "colorama>=0.4.1", "psutil>=5.5.1", "pyyaml>=3.13"
     ],
     # packages=setuptools.find_packages(),
     packages=['digideep'],
