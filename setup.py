@@ -10,7 +10,7 @@ setuptools.setup(
     # long_description_content_type="text/markdown",
     url="https://github.com/sharif1093/digideep",
     install_requires=[
-        "colorama>=0.4.1", "psutil>=5.5.1", "pyyaml>=3.13",
+        "colorama>=0.4.1", "psutil>=5.5.1", "pyyaml>=3.13", "sphinxcontrib-programoutput>=0.13"
     ],
     packages=setuptools.find_packages(),
     license="",
