@@ -1,3 +1,5 @@
+**Caution**: Code is under active development. Breaking changes are probable.
+
 # Digideep
 
 A pipeline for fast prototyping Deep RL problems using [PyTorch](https://github.com/pytorch/pytorch)
