@@ -30,6 +30,8 @@ from gym import spaces
 import gym
 # Even though we don't need dm_control to be loaded here, it helps in initializing glfw.
 import digideep.environment.dmc2gym
+
+from gym.envs.registration import registry
 ################################################
 
 
@@ -76,6 +78,8 @@ class MakeEnvironment:
         Except :class:`~digideep.environment.common.monitor.Monitor` environment, no environment will be applied on the environment
         unless explicitly specified.
     """
+    
+    registered = False
 
     def __init__(self, session, mode, seed, **params):
         self.mode = mode # train/test/eval
@@ -83,13 +87,25 @@ class MakeEnvironment:
         self.session = session
         self.params  = params
         
-        # Load user-defined modules in which the environment will be registered:
-        if params["module"]:
+        # Won't we have several environment registrations by this?
+        if params["from_module"]:
             try:
-                get_module(params["module"])
+                get_module(params["from_module"])
             except Exception as ex:
                 logger.fatal("While importing user module:", ex)
                 exit()
+        elif (params["from_params"]) and (not MakeEnvironment.registered):
+            try:
+                registry.register(**params["register_args"])
+                MakeEnvironment.registered = True
+            except Exception as ex:
+                logger.fatal("While registering from parameters:", ex)
+                exit()
+        
+        # After all of these, check if environment is registered in the gym or not.
+        if not params["name"] in registry.env_specs:
+            logger.fatal("Environment '" + params["name"] + "' is not registered in the gym registry.")
+            exit()
         
     def make_env(self, rank, force_no_monitor=False):
         import sys # For debugging
