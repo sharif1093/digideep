@@ -39,8 +39,6 @@ from gym.envs.registration import registry
 #############################
 ##### Utility Functions #####
 #############################
-import collections
-UnitConfig = collections.namedtuple("UnitConfig", "typ dim lim")
 def space2config(S):
     """Function to convert space's characteristics into a config-space dict.
     """
@@ -49,12 +47,12 @@ def space2config(S):
         typ = S.__class__.__name__
         dim = S.n
         lim = (np.nan, np.nan) # Discrete Spaces do not have high/low
-        config = UnitConfig(typ, dim, lim)
+        config = {"typ":typ, "dim":dim, "lim":lim}
     elif isinstance(S, spaces.Box):
         typ = S.__class__.__name__
         dim = S.shape # S.shape[0]: This "[0]" only supports 1d arrays.
-        lim = (S.low, S.high)
-        config = UnitConfig(typ, dim, lim)
+        lim = (S.low.tolist(), S.high.tolist())
+        config = {"typ":typ, "dim":dim, "lim":lim}
     elif isinstance(S, spaces.Dict):
         config = {}
         for k in S.spaces:

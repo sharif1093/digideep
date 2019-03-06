@@ -28,7 +28,7 @@ class EGreedyNoise:
         # Add some noise to the action
         std = self.params["std"]
         e   = self.params["e"]
-        lim = self.params["lim"]
+        lim = self.params["lim"] # A scalar
         
         noise = std * lim * np.random.randn(*action.shape)
         action += noise

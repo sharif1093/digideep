@@ -41,24 +41,24 @@ class Policy(PolicyBase):
         #######
         # modelclass = get_class(modelname)
         #######
-        if len(obs_space.dim) == 3: # It means we have images as observations
-            # obs_space.dim[0] is the channels of the input
-            self.model["base"] = CNNModel(num_inputs=obs_space.dim[0], **modelargs)
-        elif len(obs_space.dim) == 1: # It means we have vectors as observation
-            self.model["base"] = MLPModel(num_inputs=obs_space.dim[0], **modelargs)
+        if len(obs_space["dim"]) == 3: # It means we have images as observations
+            # obs_space["dim"][0] is the channels of the input
+            self.model["base"] = CNNModel(num_inputs=obs_space["dim"][0], **modelargs)
+        elif len(obs_space["dim"]) == 1: # It means we have vectors as observation
+            self.model["base"] = MLPModel(num_inputs=obs_space["dim"][0], **modelargs)
         else:
             raise NotImplementedError
 
 
-        num_outputs = act_space.dim if np.isscalar(act_space.dim) else act_space.dim[0]
-        if act_space.typ == "Discrete":
+        num_outputs = act_space["dim"] if np.isscalar(act_space["dim"]) else act_space["dim"][0]
+        if act_space["typ"] == "Discrete":
             print("Discrete is recognized and num_outputs=", num_outputs)
             self.model["dist"] = Categorical(num_inputs=modelargs["output_size"], num_outputs=num_outputs)
-        elif act_space.typ == "Box":
+        elif act_space["typ"] == "Box":
             self.model["dist"] = DiagGaussian(num_inputs=modelargs["output_size"], num_outputs=num_outputs)
-        elif act_space.typ == "MultiBinary":
+        elif act_space["typ"] == "MultiBinary":
             # TODO: Is the following necessary?
-            num_outputs = act_space.dim[0]
+            num_outputs = act_space["dim"][0]
             self.model["dist"] = Bernoulli(num_inputs=modelargs["output_size"], num_outputs=num_outputs)
         else:
             raise NotImplementedError("The action_space of the environment is not supported!")

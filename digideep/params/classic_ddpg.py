@@ -185,7 +185,7 @@ def gen_params(cpanel):
                                                # {"mode":"hard", "interval":10000}
                                                }
     
-    lim = params["env"]["config"]["action_space"][agent_name].lim[1][0]
+    lim = params["env"]["config"]["action_space"][agent_name]["lim"][1][0]
     # params["agents"]["agent"]["noisename"] = "digideep.agent.noises.EGreedyNoise"
     # params["agents"]["agent"]["noiseargs"] = {"std":0.2, "e":0.3, "lim": lim}
     

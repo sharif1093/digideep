@@ -28,12 +28,12 @@ class Policy(PolicyBase):
 
         self.params = params
 
-        assert len(self.params["obs_space"].dim) == 1, "We only support 1d observations for the DDPG policy for now."
-        assert self.params["act_space"].typ == "Box", "We only support continuous actions in DDPG policy for now."
+        assert len(self.params["obs_space"]["dim"]) == 1, "We only support 1d observations for the DDPG policy for now."
+        assert self.params["act_space"]["typ"] == "Box", "We only support continuous actions in DDPG policy for now."
 
-        state_size  = self.params["obs_space"].dim[0]
-        action_size = self.params["act_space"].dim if np.isscalar(self.params["act_space"].dim) else self.params["act_space"].dim[0]
-        action_gain = self.params["act_space"].lim[1][0]
+        state_size  = self.params["obs_space"]["dim"][0]
+        action_size = self.params["act_space"]["dim"] if np.isscalar(self.params["act_space"]["dim"]) else self.params["act_space"]["dim"][0]
+        action_gain = self.params["act_space"]["lim"][1][0]
 
         self.model["actor"] = ActorModel(state_size=state_size, action_size=action_size, action_gain=action_gain, **self.params["actor_args"])
         self.model["actor_target"] = deepcopy(self.model["actor"])
