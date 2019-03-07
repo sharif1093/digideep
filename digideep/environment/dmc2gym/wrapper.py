@@ -9,7 +9,6 @@ from gym.utils import EzPickle
 
 import numpy as np
 import collections
-import warnings
 import sys
 import copy
 

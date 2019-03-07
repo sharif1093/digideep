@@ -8,7 +8,7 @@ from gym import spaces
 from dm_control.rl import specs
 import numpy as np
 import collections
-
+# import warnings
 
 def spec2space_single(spec):
     """
@@ -21,7 +21,7 @@ def spec2space_single(spec):
 
     if (type(spec) is specs.BoundedArraySpec) and (spec.dtype == np.int):
     # Discrete
-        warnings.warn("The DMC environment uses a discrete action space!")
+        # warnings.warn("The DMC environment uses a discrete action space!")
         if spec.minimum == 0:
             return spaces.Discrete(spec.maximum)
         else:
