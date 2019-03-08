@@ -45,7 +45,7 @@ def space2config(S):
     # S.__class__.__name__: "Discrete" / "Box"
     if isinstance(S, spaces.Discrete):
         typ = S.__class__.__name__
-        dim = S.n
+        dim = np.int32(S.n)
         lim = (np.nan, np.nan) # Discrete Spaces do not have high/low
         config = {"typ":typ, "dim":dim, "lim":lim}
     elif isinstance(S, spaces.Box):

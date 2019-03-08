@@ -51,8 +51,8 @@ class Policy(PolicyBase):
 
         # TODO: For discrete actions, `act_space["dim"][0]` works. It works for constinuous actions as well.
         #       Even for discrete actions `np.isscalar(act_space["dim"])` returns False.
-        # num_outputs = act_space["dim"] if np.isscalar(act_space["dim"]) else act_space["dim"][0]
-        num_outputs = act_space["dim"].item() if len(act_space["dim"].shape)==0 else act_space["dim"][0]
+        num_outputs = act_space["dim"] if np.isscalar(act_space["dim"]) else act_space["dim"][0]
+        # num_outputs = act_space["dim"].item() if len(act_space["dim"].shape)==0 else act_space["dim"][0]
         if act_space["typ"] == "Discrete":
             print("Discrete is recognized and num_outputs=", num_outputs)
             self.model["dist"] = Categorical(num_inputs=modelargs["output_size"], num_outputs=num_outputs)
