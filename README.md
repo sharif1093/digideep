@@ -33,17 +33,16 @@ Please visit https://digideep.readthedocs.io/en/latest/ for documentation.
 The features of Digideep can be listed as following:
 
 * Developer-friendly code:
-  * The code is highly readable and easy to learn and modify.
-  * Extensive documentation and tutorials for getting developers engaged in coding faster.
-  * Different parts are decoupled and modular, so that developers can focus only on method
-    implementations rather than exploration/storage.
-  * Provides debugging tools for profiling time and monitoring values.
-* Has single-node multi-cpu multi-gpu architectures implementation to utilize CPU and GPU better on a single node.
+  * The code is highly readable and fairly easy to understand and modify.
+  * Extensive documentation to support the above.
+  * Written for modularity and easy code reuse.
+  * Provides debugging tools as an assistence for implementation new methods.
+* Has a single-node multi-cpu multi-gpu architecture implementated to utilize CPU and GPU on a single node.
 * Connects to `dm_control` and uses `dm_control`'s native viewer for rendering.
-* It provides a multi-agent architecture.
-* Controling all parameters from withing one single `parameter` file.
-* Structured periodic saving of results as sessions.
-* Serialization is a built-in feature of Digideep.
+* Provides batch-environment for `dm_control` through OpenAI baseline's `VecEnv` wrapper.
+* Implements a multi-agent architecture.
+* Controls all parameters from one single `parameter` file for easier control.
+* Supports (de-)serialization structurally.
 
 
 ## Changelog
