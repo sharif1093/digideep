@@ -36,7 +36,7 @@ The features of Digideep can be listed as following:
   * The code is highly readable and fairly easy to understand and modify.
   * Extensive documentation to support the above.
   * Written for modularity and easy code reuse.
-  * Provides debugging tools as an assistence for implementation new methods.
+  * Provides debugging tools as an assistance for implementation new methods.
 * Has a single-node multi-cpu multi-gpu architecture implemented to utilize CPU and GPU on a single node.
 * Connects to `dm_control` and uses `dm_control`'s native viewer for rendering.
 * Provides batch-environment for `dm_control` through OpenAI baseline's `VecEnv` wrapper.
