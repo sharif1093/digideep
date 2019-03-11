@@ -42,7 +42,6 @@ The features of Digideep can be listed as following:
 * Has a single-node multi-cpu multi-gpu architecture implemented to utilize CPU and GPU on a single node.
 * Connects to `dm_control` and uses `dm_control`'s native viewer for rendering.
 * Provides batch-environment for `dm_control` through OpenAI baseline's `VecEnv` wrapper.
-* Implements a multi-agent architecture.
 * Controls all parameters from one single `parameter` file for easier control.
 * Supports (de-)serialization structurally.
 
