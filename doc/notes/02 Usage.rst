@@ -62,8 +62,11 @@ Training/Replaying
 .. code-block:: bash
     :caption: Loading a checkpoint to play
 
-    python -m digideep.main --play --load-checkpoint \
-           "/tmp/digideep_sessions/session_YYYYYMMDDHHMMSS/checkpoints/checkpoint-XXX"
+    # Typical loading
+    python -m digideep.main --play --load-checkpoint "<path-to-checkpoint>"
+    
+    # Loading a checkpoint using its saved modules (through --save-modules option)
+    PYTHONPATH="<path-to-session>/modules" python -m digideep.main --play --load-checkpoint "<path-to-checkpoint>"
 
 
 .. _ref-play-debug:
