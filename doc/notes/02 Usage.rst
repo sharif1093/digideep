@@ -10,27 +10,30 @@ Training/Replaying
 
     $ python -m digideep.main --help
     usage: main.py [-h] [--load-checkpoint <path>] [--play]
-                  [--session-path <path>] [--log-level <n>] [--visdom]
-                  [--visdom-port <n>] [--monitor-cpu] [--monitor-gpu]
-                  [--params <name>] [--cpanel <json dictionary>]
+                    [--session-path <path>] [--save-modules <path> [<path> ...]]
+                    [--log-level <n>] [--visdom] [--visdom-port <n>]
+                    [--monitor-cpu] [--monitor-gpu] [--params <name>]
+                    [--cpanel <json dictionary>]
 
     optional arguments:
-      -h, --help            show this help message and exit
-      --load-checkpoint <path>
-                            Load a checkpoint to resume training from that point.
-      --play                Will play the stored policy.
-      --session-path <path>
-                            The path to store the sessions. Default is in /tmp
-      --log-level <n>       The logging level: 0 (debug and above), 1 (info and
-                            above), 2 (warn and above), 3 (error and above), 4
-                            (fatal and above)
-      --visdom              Whether to use visdom or not!
-      --visdom-port <n>     The port of visdom server, it's on 8097 by default.
-      --monitor-cpu         Use to monitor CPU resource statistics on Visdom.
-      --monitor-gpu         Use to monitor GPU resource statistics on Visdom.
-      --params <name>       Choose the parameter set.
-      --cpanel <json dictionary>
-                            Set the parameters of the cpanel by a json dictionary.
+        -h, --help            show this help message and exit
+        --load-checkpoint <path>
+                              Load a checkpoint to resume training from that point.
+        --play                Will play the stored policy.
+        --session-path <path>
+                              The path to store the sessions. Default is in /tmp
+        --save-modules <path> [<path> ...]
+                              The modules to be stored in the session.
+        --log-level <n>       The logging level: 0 (debug and above), 1 (info and
+                              above), 2 (warn and above), 3 (error and above), 4
+                              (fatal and above)
+        --visdom              Whether to use visdom or not!
+        --visdom-port <n>     The port of visdom server, it's on 8097 by default.
+        --monitor-cpu         Use to monitor CPU resource statistics on Visdom.
+        --monitor-gpu         Use to monitor GPU resource statistics on Visdom.
+        --params <name>       Choose the parameter set.
+        --cpanel <json dictionary>
+                              Set the parameters of the cpanel by a json dictionary.
 
 
 .. code-block:: bash

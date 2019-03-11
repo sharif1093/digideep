@@ -23,7 +23,9 @@ class Session(object):
     * :file:`session_YYYYMMDDHHMMSS/`:
     
         * :file:`checkpoints/`: The directory of all stored checkpoints.
-        * :file:`digideep/`: A copy of digideep module.
+        * :file:`modules/`: A copy of all modules that should be saved with the results. This helps to load
+          checkpoints in evolving codes with breaking changes. Use extra modules with ``--save-modules``
+          command-line option.
         * :file:`monitor/`: Summary results of each worker environment.
         * :file:`cpanel.json`: A json file including control panel (``cpanel``) parameters in ``params`` file.
         * :file:`params.yaml`: The parameter tree of the session, i.e. the params variable in ``params`` file.
@@ -155,10 +157,16 @@ class Session(object):
         This function will make the session act like a python module.
         The user can then simply import the module for inference.
         """
-        # Copy the module
-        module_source = os.path.join(self.state['path_root'], 'digideep')
-        module_target = os.path.join(self.state['path_session'], 'digideep')
-        copytree(module_source, module_target, ignore=ignore_patterns('*.pyc', '__pycache__'))
+        # Copy the all modules
+        modules = set(self.args["save_modules"])
+        # Add digideep per se to the saved modules.
+        modules.add("digideep")
+        for mod in modules:
+            real_mod = get_module(mod)
+            module_source = real_mod.__path__[0]
+            module_target = os.path.join(self.state['path_session'], 'modules', mod)
+            copytree(module_source, module_target, ignore=ignore_patterns('*.pyc', '__pycache__'))
+
         # Copy loader.py to the session root path
         # copyfile(os.path.join(module_source, 'loader.py'), os.path.join(self.state['path_session'], 'loader.py'))
         # Create __init__.py at the session root path
@@ -217,8 +225,8 @@ class Session(object):
         try:
             filename = os.path.join(self.args["load_checkpoint"], "runner.pt")
             runner = pickle.load(open(filename,"rb"))
-        except:
-            logger.fatal("Checkpoint could not be loaded successfully!")
+        except Exception as ex:
+            logger.fatal("Error loading from checkpoint:", ex)
             exit()
         return runner
 
@@ -254,6 +262,7 @@ class Session(object):
         parser.add_argument('--play', action="store_true", help="Will play the stored policy.")
         ## Session
         parser.add_argument('--session-path', metavar=('<path>'), default='/tmp', type=str, help="The path to store the sessions. Default is in /tmp")
+        parser.add_argument('--save-modules', metavar=('<path>'), default=[], nargs='+', type=str, help="The modules to be stored in the session.")
         parser.add_argument('--log-level', metavar=('<n>'), default=1, type=int, help="The logging level: 0 (debug and above), 1 (info and above), 2 (warn and above), 3 (error and above), 4 (fatal and above)")
         ## Visdom Server
         parser.add_argument('--visdom', action='store_true', help="Whether to use visdom or not!")
