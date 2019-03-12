@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 
 from digideep.utility.toolbox import get_class
+from digideep.utility.logging import logger
 
 from digideep.policy.base import PolicyBase
 
