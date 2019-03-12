@@ -14,6 +14,7 @@ from .common import init_easy, init_rnn
 from .blocks import MLPBlock, RNNBlock, CNNBlock
 
 from digideep.utility.toolbox import get_class #, get_module
+from digideep.utility.logging import logger
 
 from digideep.policy.base import PolicyBase
 
@@ -66,6 +67,7 @@ class Policy(PolicyBase):
             raise NotImplementedError("The action_space of the environment is not supported!")
         
         self.model_to_gpu()
+        logger("Number of parameters:\n>>>>>>", self.count_parameters())
 
 
     def generate_actions(self, inputs, hidden, masks, deterministic=False):

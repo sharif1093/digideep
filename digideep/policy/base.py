@@ -1,6 +1,7 @@
 from abc import abstractmethod
 import torch
 import torch.nn as nn
+import numpy as np
 
 class PolicyBase(object):
     """The base class for all policy classes. Policy is a model inside the agent which generates
@@ -38,6 +39,12 @@ class PolicyBase(object):
         else:
             gpu_count = 0
         self.model.to(self.device) # dtype=model_type
+
+    def count_parameters(self):
+        """
+        Counts the number of parameters in a PyTorch model.
+        """
+        return np.sum(p.numel() for p in list(self.model.parameters()) if p.requires_grad)
 
     @abstractmethod
     def state_dict(self):

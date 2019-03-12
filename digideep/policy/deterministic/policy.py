@@ -46,6 +46,7 @@ class Policy(PolicyBase):
         self.averager["critic"] = Averager(self.model["critic"], self.model["critic_target"], **self.params["average_args"])
         
         self.model_to_gpu()
+        logger("Number of parameters:\n>>>>>>", self.count_parameters())
     
     def generate_actions(self, inputs, deterministic=False):
         """
