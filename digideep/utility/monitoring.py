@@ -77,8 +77,7 @@ class Monitor(object):
         return np.sqrt(var / num)
     
     def get_num(self, name):
-        assert name in self.num
-        return self.num[name]
+        return self.num.get(name, 0)
     
     def get_sum(self, name):
         assert name in self.num
