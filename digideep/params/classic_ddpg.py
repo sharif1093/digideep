@@ -1,4 +1,7 @@
 """
+This parameter file is designed for continuous action environments.
+For discrete action environments minor modifications might be required.
+
 See Also:
     :ref:`ref-parameter-files`
 """
@@ -30,20 +33,17 @@ cpanel["model_name"] = 'Pendulum-v0'        # Classic Control Env
 
 # General Parameters
 # num_frames = 10e6  # Number of frames to train
-cpanel["epoch_size"]    = 200 # cycles
+cpanel["epoch_size"]    = 400  # cycles
 cpanel["number_epochs"] = 100000
-cpanel["test_activate"] = True # Test Activate
-cpanel["test_interval"] = 10    # Test Interval
-cpanel["save_interval"] = 1     # Save Interval
+cpanel["test_activate"] = False # Test Activate
+cpanel["test_interval"] = 10    # Test Interval Every #n Cycles
+cpanel["save_interval"] = 1     # Save Interval Every #n Cycles
 
-cpanel["seed"] = 13
+cpanel["seed"] = 0
 cpanel["cuda_deterministic"] = False # With TRUE we MIGHT get more deterministic results but at the cost of speed.
-cpanel["memory_size_in_chunks"] = int(10000) # MUST be 1 for PPO/A2C/ACKTR. SUGGESTIONS: 2^0 (~1) | 2^3 (~10) | 2^7 (~100) | 2^10 (~1000) | 2^13 (~10000)
+cpanel["memory_size_in_chunks"] = int(100000) # MUST be 1 for PPO/A2C/ACKTR. SUGGESTIONS: 2^0 (~1) | 2^3 (~10) | 2^7 (~100) | 2^10 (~1000) | 2^13 (~10000)
 
 cpanel["gamma"] = 0.99     # The gamma parameter used in VecNormalize | Agent.preprocess | Agent.step
-# cpanel["use_gae"] = True   # Whether to use GAE to calculate returns or not.
-# cpanel["tau"] = 0.95       # The parameter used for calculating advantage function.
-# cpanel["recurrent"] = False
 
 # Wrappers
 cpanel["add_monitor"]           = True  # Always useful, sometimes necessary.
@@ -59,26 +59,18 @@ cpanel["add_frame_stack_axis"]  = False # Necessary for training on renders, e.g
 cpanel["nstack"] = 4
 
 # EXPLORATION: num_workers * n_steps
-cpanel["num_workers"] = 1         # Number of exploratory workers working together
-cpanel["n_steps"] = 1 # 200           # Number of frames to produce                                                ### 1000
-# EXPLOITATION: [PPO_EPOCH] Number of times to perform PPO update, i.e. number of frames to process.
-cpanel["n_update"] = 1 # 150
-cpanel["batch_size"] = 128                                                                                      ### 128
-# batch_size = n_steps * num_workers = 32 * 4. Choose the num_mini_batches accordingly.
-# cpanel["num_mini_batches"] = 2
+cpanel["num_workers"] = 1 #100      # Number of exploratory workers working together
+cpanel["n_steps"] = 1     #50       # Number of frames to produce
+cpanel["n_update"] = 1
+cpanel["batch_size"] = 64
+
 
 # Method Parameters
-cpanel["lr"] = 0.001 # 2.5e-4 | 7e-4
+cpanel["lr_actor"] = 0.001  # 0.0001
+cpanel["lr_critic"] = 0.001 # 0.001
 cpanel["eps"] = 1e-5 # Epsilon parameter used in the optimizer(s) (ADAM/RMSProp/...)
 
-cpanel["polyak_factor"] = 0.001
-# cpanel["polyak_factor"] = 1
-
-# cpanel["clip_param"] = 0.1       # 0.2  # PPO clip parameter
-# cpanel["value_loss_coef"] = 0.50 # 1    # Value loss coefficient
-# cpanel["entropy_coef"] = 0       # 0.01 # Entropy term coefficient
-# cpanel["max_grad_norm"] = 0.50   # Max norm of gradients
-# cpanel["use_clipped_value_loss"] = True
+cpanel["polyak_factor"] = 0.001 # 0.01
 
 
 ################################################################################
@@ -193,8 +185,11 @@ def gen_params(cpanel):
     params["agents"]["agent"]["noiseargs"] = {"mu":0, "theta":0.15, "sigma":0.2, "lim":lim}
     # params["agents"]["agent"]["noiseargs"] = {"mu":0, "theta":0.15, "sigma":1}
 
-    params["agents"]["agent"]["optimname"] = "torch.optim.Adam"
-    params["agents"]["agent"]["optimargs"] = {"lr":cpanel["lr"]} # , "eps":cpanel["eps"]
+    params["agents"]["agent"]["optimname_actor"] = "torch.optim.Adam"
+    params["agents"]["agent"]["optimargs_actor"] = {"lr":cpanel["lr_actor"]}   # , "eps":cpanel["eps"]
+
+    params["agents"]["agent"]["optimname_critic"] = "torch.optim.Adam"
+    params["agents"]["agent"]["optimargs_critic"] = {"lr":cpanel["lr_critic"]} # , "eps":cpanel["eps"]
 
     # RMSprop optimizer alpha
     # params["agents"]["agent"]["optimargs"] = {"lr":1e-2, "alpha":0.99, "eps":1e-5, "weight_decay":0, "momentum":0, "centered":False}

@@ -56,10 +56,11 @@ class DDPG(AgentBase):
         
         
         # Set the optimizer (+ schedulers if any)
-        optimclass = get_class(self.params["optimname"])
+        optimclass_actor = get_class(self.params["optimname_actor"])
+        optimclass_critic = get_class(self.params["optimname_critic"])
         self.optimizer = {}
-        self.optimizer["actor"]  = optimclass(self.policy.model["actor"].parameters(),  **self.params["optimargs"])
-        self.optimizer["critic"] = optimclass(self.policy.model["critic"].parameters(), **self.params["optimargs"])
+        self.optimizer["actor"] = optimclass_actor(self.policy.model["actor"].parameters(), **self.params["optimargs_actor"])
+        self.optimizer["critic"] = optimclass_critic(self.policy.model["critic"].parameters(), **self.params["optimargs_critic"])
 
         noiseclass = get_class(self.params["noisename"])
         self.noise = noiseclass(**self.params["noiseargs"])
