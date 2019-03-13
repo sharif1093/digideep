@@ -32,6 +32,7 @@ class Runner:
         self.params = params
         self.state = {}
         self.state["i_frame"] = 0
+        self.state["i_rolls"] = 0
         self.state["i_cycle"] = 0
         self.state["i_epoch"] = 0
         self.state["loading"] = False
@@ -291,15 +292,19 @@ class Runner:
         """
 
         n_frame = self.params["explorer"]["train"]["num_workers"] * profiler.get_occurence("/explore/step")
+        n_rolls = monitor.get_num("/explore/reward/train")
+
         self.state["i_frame"] += n_frame
+        self.state["i_rolls"] += n_rolls
         # assert profiler.get_occurence("/explore/step") ==  self.params["explorer"]["train"]["n_steps"] * self.params["runner"]["n_cycles"]
         ## elapsed = profiler.get_time_average("/")
         elapsed = profiler.get_time_overall("/")
         overall = int(n_frame / elapsed)
         
         logger("---------------------------------------------------------")
-        logger("Frame={:4.1e} | Epoch({:3d}cy)={:4d} | Overall({:4.1e}F/{:4.1f}s)={:4d}Hz".format(
+        logger("Frame={:4.1e} | Episodes={:4.1e} | Epoch({:3d}cy)={:4d} | Overall({:4.1e}F/{:4.1f}s)={:4d}Hz".format(
                 self.state["i_frame"],
+                self.state["i_rolls"],
                 self.params["runner"]["n_cycles"],
                 self.state["i_epoch"],
                 n_frame,
