@@ -47,26 +47,29 @@ class Monitor(object):
             self.append(*args, **kwargs)
 
     def append(self, name, value):
-        if not name in self.num:
-            arr = np.array(value)
-            
-            self.std[name] = np.zeros_like(arr)
-            self.num[name] = 1
-            self.min[name] = arr
-            self.max[name] = arr
-            self.sum[name] = arr
-            
-            # self.data[name] = [value]
-        else:
-            # "std" whould be updated first
-            # https://math.stackexchange.com/a/2105509
-            self.std[name] = self._update_std(name, value)
-            self.num[name] = self.num[name] + 1
-            self.min[name] = np.minimum(self.min[name], value)
-            self.max[name] = np.maximum(self.max[name], value)
-            self.sum[name] = np.add(self.sum[name], value)
-            
-            # self.data[name] += [value]
+        try:
+            if not name in self.num:
+                arr = np.array(value)
+                
+                self.std[name] = np.zeros_like(arr)
+                self.num[name] = 1
+                self.min[name] = arr
+                self.max[name] = arr
+                self.sum[name] = arr
+                
+                # self.data[name] = [value]
+            else:
+                # "std" whould be updated first
+                # https://math.stackexchange.com/a/2105509
+                self.std[name] = self._update_std(name, value)
+                self.num[name] = self.num[name] + 1
+                self.min[name] = np.minimum(self.min[name], value)
+                self.max[name] = np.maximum(self.max[name], value)
+                self.sum[name] = np.add(self.sum[name], value)
+                
+                # self.data[name] += [value]
+        except Exception as ex:
+            raise RuntimeError("Error occured at name = " + name + ": " + str(ex))
             
     def _update_std(self, name, value):
         # Assumption: num > 1
