@@ -107,7 +107,8 @@ def get_sample_memory(buffer, info):
         warnings.warn("batch_size ({}) should be smaller than total number of records (~ {}={}x{}).".format(batch_size, num_workers*N, num_workers, N))
         return None
 
-    sample_indices = np.random.choice(valid_arr, batch_size, replace=False)
+    # Sampling with replacement:
+    sample_indices = np.random.choice(valid_arr, batch_size, replace=True)
 
     sample_tabular   = [[sample_indices // N], [sample_indices % N]]
     sample_tabular_2 = [[sample_indices // N], [sample_indices % N + 1]]
