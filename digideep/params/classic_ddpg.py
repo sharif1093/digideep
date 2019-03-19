@@ -72,6 +72,8 @@ cpanel["eps"] = 1e-5 # Epsilon parameter used in the optimizer(s) (ADAM/RMSProp/
 
 cpanel["polyak_factor"] = 0.001 # 0.01
 
+cpanel["noise_std"] = 0.2
+
 
 ################################################################################
 #########                      PARAMETER TREE                          #########
@@ -179,10 +181,10 @@ def gen_params(cpanel):
     
     lim = params["env"]["config"]["action_space"][agent_name]["lim"][1][0]
     # params["agents"]["agent"]["noisename"] = "digideep.agent.noises.EGreedyNoise"
-    # params["agents"]["agent"]["noiseargs"] = {"std":0.2, "e":0.3, "lim": lim}
+    # params["agents"]["agent"]["noiseargs"] = {"std":cpanel["noise_std"], "e":0.3, "lim": lim}
     
     params["agents"]["agent"]["noisename"] = "digideep.agent.noises.OrnsteinUhlenbeckNoise"
-    params["agents"]["agent"]["noiseargs"] = {"mu":0, "theta":0.15, "sigma":0.2, "lim":lim}
+    params["agents"]["agent"]["noiseargs"] = {"mu":0, "theta":0.15, "sigma":cpanel["noise_std"], "lim":lim}
     # params["agents"]["agent"]["noiseargs"] = {"mu":0, "theta":0.15, "sigma":1}
 
     params["agents"]["agent"]["optimname_actor"] = "torch.optim.Adam"
