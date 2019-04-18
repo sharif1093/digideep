@@ -166,10 +166,18 @@ class DmControlWrapper(Env, EzPickle):
     def render(self, mode='human', **render_kwargs):
         """Render function which supports two modes: ``rgb_array`` and ``human``.
         If ``mode`` is ``rgb_array``, it will return the image in pixels format.
+
+        Args:
+            render_kwargs: Check ``dm_control/mujoco/engine.py``.
+              Defaults: ``render(height=240, width=320, camera_id=-1, overlays=(), depth=False, segmentation=False, scene_option=None)``
         """
 
         # render_kwargs = { 'height', 'width', 'camera_id', 'overlays', 'depth', 'scene_option'}
         if mode == 'rgb_array':
+            if not "width" in render_kwargs:
+                render_kwargs["width"] = 640
+            if not "height" in render_kwargs:
+                render_kwargs["height"] = 480
             pixels = self._get_viewer(mode)(**render_kwargs)
             return pixels
         elif mode == 'human':

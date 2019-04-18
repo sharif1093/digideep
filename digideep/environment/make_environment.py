@@ -19,6 +19,8 @@ from digideep.environment.wrappers import VecFrameStackAxis
 from digideep.environment.wrappers import VecNormalize
 from digideep.environment.wrappers import VecSaveState
 
+from gym.wrappers.monitor import Monitor as MonitorVideoRecorder
+
 from digideep.utility.toolbox import get_module
 
 from digideep.utility.logging import logger
@@ -126,6 +128,12 @@ class MakeEnvironment:
             if not force_no_monitor and self.params["wrappers"]["add_monitor"]:
                 log_dir = os.path.join(self.session["path_monitor"], str(rank))
                 env = Monitor(env, log_dir, **self.params["wrappers_args"]["Monitor"])
+            
+            if self.mode == "eval":
+                videos_dir = os.path.join(self.session["path_videos"], str(rank))
+                env = MonitorVideoRecorder(env, videos_dir, video_callable=lambda id:True)
+            # elif self.mode == "train":
+            #     env = MonitorVideoRecorder(env, videos_dir)
 
             if is_atari and len(env.observation_space.shape) == 3:
                 env = wrap_deepmind(env)

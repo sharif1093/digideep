@@ -9,6 +9,7 @@ import pickle, torch
 from copy import deepcopy
 
 def generateTimestamp():
+    # Always uses UTC as timezone
     now = datetime.datetime.now()
     timestamp = '{:%Y%m%d%H%M%S}'.format(now)
     return timestamp
@@ -92,6 +93,7 @@ class Session(object):
         self.state['path_session']     = os.path.join(self.state['path_base_sessions'], 'session_' + generateTimestamp())
         self.state['path_checkpoints'] = os.path.join(self.state['path_session'], 'checkpoints')
         self.state['path_monitor']     = os.path.join(self.state['path_session'], 'monitor')
+        self.state['path_videos']      = os.path.join(self.state['path_session'], 'videos')
         # Hyper-parameters basically is a snapshot of intial parameter engine's state.
         self.state['file_cpanel'] = os.path.join(self.state['path_session'], 'cpanel.json')
         self.state['file_params'] = os.path.join(self.state['path_session'], 'params.yaml')
@@ -130,7 +132,9 @@ class Session(object):
             except Exception as ex:
                 logger.fatal("While importing user-specified params:", ex)
                 exit()
-
+        if self.is_loading:
+            logger.warn("Loading from:", self.args["load_checkpoint"])
+        
         print(':: The session will be stored in ' + self.state['path_session'])
 
     def initLogger(self):
