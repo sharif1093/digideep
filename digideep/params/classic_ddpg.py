@@ -170,7 +170,7 @@ def gen_params(cpanel):
     ### Model ###
     #############
     agent_name = params["agents"]["agent"]["name"]
-    params["agents"]["agent"]["policyname"] = "digideep.policy.deterministic.Policy"
+    params["agents"]["agent"]["policyname"] = "digideep.agent.policy.deterministic.Policy"
     params["agents"]["agent"]["policyargs"] = {"obs_space": params["env"]["config"]["observation_space"],
                                                "act_space": params["env"]["config"]["action_space"][agent_name],
                                                "actor_args": {"eps":0.003},

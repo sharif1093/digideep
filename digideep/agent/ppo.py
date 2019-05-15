@@ -7,8 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
 
-from digideep.memory.sampler import sampler_ff, sampler_rn
-# from digideep.memory.sampler import check_shape
+from digideep.agent.samplers.default import sampler_ff, sampler_rn
+# from digideep.agent.samplers.default import check_shape
 
 from digideep.utility.toolbox import get_class
 from digideep.utility.logging import logger
@@ -122,7 +122,7 @@ class PPO(AgentBase):
         * ``/agents/<agent_name>/artifacts/advantages``
         * ``/agents/<agent_name>/artifacts/returns``
 
-        The last two keys are added by the :mod:`digideep.memory.sampler`, while the rest are added at
+        The last two keys are added by the :mod:`digideep.agent.samplers.default`, while the rest are added at
         :class:`~digideep.environment.explorer.Explorer`.
 
         """
@@ -156,6 +156,7 @@ class PPO(AgentBase):
                                                         actions)
 
                 with KeepTime("/update/step/batches/loss_function"):
+                    # This ratio is the quotient of old/new policy "density" at the state s.
                     ratio = torch.exp(action_log_p - old_action_log_p)
                     surr1 = ratio * advantages
                     surr2 = torch.clamp(ratio, 1.0 - self.params["methodargs"]["clip_param"],

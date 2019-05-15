@@ -16,7 +16,7 @@ from .blocks import MLPBlock, RNNBlock, CNNBlock
 from digideep.utility.toolbox import get_class #, get_module
 from digideep.utility.logging import logger
 
-from digideep.policy.base import PolicyBase
+from digideep.agent.policy.base import PolicyBase
 
 class Policy(PolicyBase):
     """The stochastic policy to be used with PPO algorithm. This policy supports three different action

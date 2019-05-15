@@ -7,8 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
 
-from digideep.memory.sampler import sampler_re
-# from digideep.memory.sampler import check_shape
+from digideep.agent.samplers.default import sampler_re
+# from digideep.agent.samplers.default import check_shape
 
 from digideep.utility.toolbox import get_class
 from digideep.utility.logging import logger
@@ -17,7 +17,7 @@ from digideep.utility.monitoring import monitor
 
 
 from .base import AgentBase
-from digideep.policy.deterministic import Policy
+from digideep.agent.policy.deterministic import Policy
 
 # torch.utils.backcompat.broadcast_warning.enabled = True
 
@@ -29,7 +29,7 @@ class DDPG(AgentBase):
         type: The type of this class which is ``digideep.agent.DDPG``.
         methodargs (dict): The parameters of the DDPG method.
         sampler:
-        policyname: The name of the policy which can be ``digideep.policy.deterministic.Policy`` for normal DDPG.
+        policyname: The name of the policy which can be ``digideep.agent.policy.deterministic.Policy`` for normal DDPG.
         policyargs: The arguments for the policy.
         noisename: The noise model name.
         noiseargs: The noise model arguments.

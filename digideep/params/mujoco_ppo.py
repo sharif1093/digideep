@@ -178,7 +178,7 @@ def gen_params(cpanel):
     ### Model ###
     #############
     agent_name = params["agents"]["agent"]["name"]
-    params["agents"]["agent"]["policyname"] = "digideep.policy.stochastic.Policy"
+    params["agents"]["agent"]["policyname"] = "digideep.agent.policy.stochastic.Policy"
     params["agents"]["agent"]["policyargs"] = {"obs_space": params["env"]["config"]["observation_space"],
                                                "act_space": params["env"]["config"]["action_space"][agent_name],
                                                "modelname": "digideep.model.models.MLPModel",
