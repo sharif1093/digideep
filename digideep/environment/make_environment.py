@@ -31,7 +31,7 @@ from gym import spaces
 ################################################
 import gym
 # Even though we don't need dm_control to be loaded here, it helps in initializing glfw.
-import digideep.environment.dmc2gym
+# import digideep.environment.dmc2gym
 
 from gym.envs.registration import registry
 ################################################
