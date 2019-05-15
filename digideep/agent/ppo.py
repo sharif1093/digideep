@@ -7,8 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
 
-from digideep.agent.samplers.default import sampler_ff, sampler_rn
-# from digideep.agent.samplers.default import check_shape
+from digideep.agent.samplers.ppo import sampler_ff, sampler_rn
+# from digideep.agent.samplers.common import check_shape
 
 from digideep.utility.toolbox import get_class
 from digideep.utility.logging import logger
@@ -122,7 +122,7 @@ class PPO(AgentBase):
         * ``/agents/<agent_name>/artifacts/advantages``
         * ``/agents/<agent_name>/artifacts/returns``
 
-        The last two keys are added by the :mod:`digideep.agent.samplers.default`, while the rest are added at
+        The last two keys are added by the :mod:`digideep.agent.samplers`, while the rest are added at
         :class:`~digideep.environment.explorer.Explorer`.
 
         """

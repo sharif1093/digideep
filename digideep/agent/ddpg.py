@@ -7,8 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
 
-from digideep.agent.samplers.default import sampler_re
-# from digideep.agent.samplers.default import check_shape
+from digideep.agent.samplers.ddpg import sampler_re
+# from digideep.agent.samplers.common import check_shape
 
 from digideep.utility.toolbox import get_class
 from digideep.utility.logging import logger
