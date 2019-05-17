@@ -126,6 +126,7 @@ class DDPG(AgentBase):
             r1 = torch.from_numpy(batch["/rewards"]).to(self.device)
             a1 = torch.from_numpy(batch["/agents/"+self.params["name"]+"/actions"]).to(self.device)
             o2 = torch.from_numpy(batch["/observations_2"]).to(self.device)
+            masks = torch.from_numpy(batch["/masks"]).to(self.device).view(-1)
 
             # o1.clamp_(min=-self.params["trainer"]["clamp_obs"], max= self.params["trainer"]["clamp_obs"])
             # o2.clamp_(min=-self.params["trainer"]["clamp_obs"], max= self.params["trainer"]["clamp_obs"])
@@ -140,7 +141,7 @@ class DDPG(AgentBase):
             # y_target = r + gamma * Q'( s2, pi'(s2))
             # NOTE: THIS SENTENCE IS VERY IMPORTANT!
             r1 = torch.squeeze(r1)
-            y_target = r1 + next_val * float(self.params["methodargs"]["gamma"])
+            y_target = r1 + masks * next_val * float(self.params["methodargs"]["gamma"])
             
             # TODO: IT WASN'T IN THE ORIGINAL IMPLEMENTATION BUT IN HER's.
             # y_target.clamp_(min=-self.params["methodargs"]["clamp_return"], max=0)

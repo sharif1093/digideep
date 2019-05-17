@@ -28,7 +28,9 @@ def get_sample_memory(buffer, info):
     masks_arr = buffer["/masks"][:,:N]
     masks_arr = masks_arr.reshape(-1)
     total_arr = np.arange(0,num_workers*N)
-    valid_arr = total_arr[masks_arr.astype(bool)]
+    ## This is if we want to mask final states (mask equals 0 for final state, 1 otherwise.)
+    # valid_arr = total_arr[masks_arr.astype(bool)]
+    valid_arr = total_arr
     
     if batch_size >= len(valid_arr):
         # We don't have enough data in the memory yet.
@@ -36,7 +38,8 @@ def get_sample_memory(buffer, info):
         return None
 
     # Sampling with replacement:
-    sample_indices = np.random.choice(valid_arr, batch_size, replace=True)
+    # sample_indices = np.random.choice(valid_arr, batch_size, replace=True)
+    sample_indices = np.random.choice(valid_arr, batch_size, replace=False)
 
     sample_tabular   = [[sample_indices // N], [sample_indices % N]]
     sample_tabular_2 = [[sample_indices // N], [sample_indices % N + 1]]
