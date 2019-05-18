@@ -74,6 +74,30 @@ class WrapperTransposeImage(gym.ObservationWrapper):
 
 
 
+
+class WrapperNormalizedActions(gym.ActionWrapper):
+    """
+    This is taken from `RL-Adventure-2 <https://github.com/higgsfield/RL-Adventure-2>`__.
+    """
+    def action(self, action):
+        low  = self.action_space.low
+        high = self.action_space.high
+        
+        action = low + (action + 1.0) * 0.5 * (high - low)
+        action = np.clip(action, low, high)
+        
+        return action
+
+    def reverse_action(self, action):
+        low  = self.action_space.low
+        high = self.action_space.high
+        
+        action = 2 * (action - low) / (high - low) - 1
+        action = np.clip(action, low, high)
+        
+        return actions
+
+
 class WrapperDummyMultiAgent(gym.ActionWrapper):
     """
     This wrapper is required to make the regular classes compatible with

@@ -15,7 +15,7 @@ from collections import OrderedDict
 # The control panel brings the most important parameters to the top. It also
 # helps to set all parameters that depends on a single value from one specific
 # place:
-#  - We can print and save this control panel instead of parameter list:
+#  - We can print and save this control panel instead of parameter list.
 #  - The parameters here can also be taken from a YAML file.
 #  - We can have default values now very easily.
 #  - It provides semantic grouping of parameters
@@ -49,15 +49,16 @@ cpanel["recurrent"] = False
 cpanel["actor_feature_size"] = 512
 
 # Wrappers
-cpanel["add_monitor"]           = True  # Always useful, sometimes necessary.
-cpanel["add_time_step"]         = False # It is suggested for MuJoCo environments. It adds time to the observation vector. CANNOT be used with renders.
-cpanel["add_image_transpose"]   = True  # ** Necessary if training on Gym with renders, e.g. Atari games
-cpanel["add_dummy_multi_agent"] = True  #  Necessary if the environment is not multi-agent (i.e. all dmc and gym environments),
-                                        # to make it compatibl with our multi-agent architecture.
-cpanel["add_vec_normalize"]     = False # ** NOTE: USE WITH CARE. Might be used with MuJoCo environments. CANNOT be used with rendered observations.
-cpanel["add_frame_stack_axis"]  = True  # ** Necessary for training on renders, e.g. Atari games. The nstack parameter is usually 4
-                                        # This stacks frames at a custom axis. If the ImageTranspose is activated
-                                        # then axis should be set to 0 for compatibility with PyTorch.
+cpanel["add_monitor"]            = True  # Always useful, sometimes necessary.
+cpanel["add_time_step"]          = False # It is suggested for MuJoCo environments. It adds time to the observation vector. CANNOT be used with renders.
+cpanel["add_image_transpose"]    = True  # ** Necessary if training on Gym with renders, e.g. Atari games
+cpanel["add_normalized_actions"] = True
+cpanel["add_dummy_multi_agent"]  = True  #  Necessary if the environment is not multi-agent (i.e. all dmc and gym environments),
+                                         # to make it compatibl with our multi-agent architecture.
+cpanel["add_vec_normalize"]      = False # ** NOTE: USE WITH CARE. Might be used with MuJoCo environments. CANNOT be used with rendered observations.
+cpanel["add_frame_stack_axis"]   = True  # ** Necessary for training on renders, e.g. Atari games. The nstack parameter is usually 4
+                                         # This stacks frames at a custom axis. If the ImageTranspose is activated
+                                         # then axis should be set to 0 for compatibility with PyTorch.
 # Wrapper Parameters
 cpanel["nstack"] = 4
 
@@ -95,6 +96,7 @@ def gen_params(cpanel):
     params["env"]["wrappers"] = {"add_monitor": cpanel["add_monitor"], 
                                 "add_time_step": cpanel["add_time_step"],
                                 "add_image_transpose": cpanel["add_image_transpose"],
+                                "add_normalized_actions": cpanel["add_normalized_actions"],
                                 "add_dummy_multi_agent": cpanel["add_dummy_multi_agent"],
                                 "add_vec_normalize": cpanel["add_vec_normalize"],
                                 "add_frame_stack_axis": cpanel["add_frame_stack_axis"]

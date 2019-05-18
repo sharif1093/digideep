@@ -46,15 +46,16 @@ cpanel["memory_size_in_chunks"] = int(100000) # MUST be 1 for PPO/A2C/ACKTR. SUG
 cpanel["gamma"] = 0.99     # The gamma parameter used in VecNormalize | Agent.preprocess | Agent.step
 
 # Wrappers
-cpanel["add_monitor"]           = True  # Always useful, sometimes necessary.
-cpanel["add_time_step"]         = False # It is suggested for MuJoCo environments. It adds time to the observation vector. CANNOT be used with renders.
-cpanel["add_image_transpose"]   = False # Necessary if training on Gym with renders, e.g. Atari games
-cpanel["add_dummy_multi_agent"] = True  # Necessary if the environment is not multi-agent (i.e. all dmc and gym environments),
-                                        # to make it compatibl with our multi-agent architecture.
-cpanel["add_vec_normalize"]     = False  # NOTE: USE WITH CARE. Might be used with MuJoCo environments. CANNOT be used with rendered observations.
-cpanel["add_frame_stack_axis"]  = False # Necessary for training on renders, e.g. Atari games. The nstack parameter is usually 4
-                                        # This stacks frames at a custom axis. If the ImageTranspose is activated
-                                        # then axis should be set to 0 for compatibility with PyTorch.
+cpanel["add_monitor"]            = True  # Always useful, sometimes necessary.
+cpanel["add_time_step"]          = False # It is suggested for MuJoCo environments. It adds time to the observation vector. CANNOT be used with renders.
+cpanel["add_image_transpose"]    = False # Necessary if training on Gym with renders, e.g. Atari games
+cpanel["add_normalized_actions"] = False
+cpanel["add_dummy_multi_agent"]  = True  # Necessary if the environment is not multi-agent (i.e. all dmc and gym environments),
+                                         # to make it compatibl with our multi-agent architecture.
+cpanel["add_vec_normalize"]      = False  # NOTE: USE WITH CARE. Might be used with MuJoCo environments. CANNOT be used with rendered observations.
+cpanel["add_frame_stack_axis"]   = False # Necessary for training on renders, e.g. Atari games. The nstack parameter is usually 4
+                                         # This stacks frames at a custom axis. If the ImageTranspose is activated
+                                         # then axis should be set to 0 for compatibility with PyTorch.
 # Wrapper Parameters
 cpanel["nstack"] = 4
 
@@ -90,6 +91,7 @@ def gen_params(cpanel):
     params["env"]["wrappers"] = {"add_monitor": cpanel["add_monitor"], 
                                 "add_time_step": cpanel["add_time_step"],
                                 "add_image_transpose": cpanel["add_image_transpose"],
+                                "add_normalized_actions": cpanel["add_normalized_actions"],
                                 "add_dummy_multi_agent": cpanel["add_dummy_multi_agent"],
                                 "add_vec_normalize": cpanel["add_vec_normalize"],
                                 "add_frame_stack_axis": cpanel["add_frame_stack_axis"]
