@@ -56,6 +56,8 @@ This code is under BSD 2-clause (FreeBSD/Simplified) license. See [LICENSE](LICE
 
 ## Acknowledgement
 
-I would like to appreciate authors of [OpenAI baselines](https://github.com/openai/baselines) and 
-[pytorch-a2c-ppo-acktr](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr) projects, by which
-this project is highly inspired.
+I would like to appreciate authors of
+[OpenAI baselines](https://github.com/openai/baselines), 
+[pytorch-a2c-ppo-acktr](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr),
+[RL-Adventure-2](https://github.com/higgsfield/RL-Adventure-2), and
+[RLkit](https://github.com/vitchyr/rlkit) projects.
