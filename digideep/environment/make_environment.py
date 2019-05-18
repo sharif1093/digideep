@@ -12,6 +12,7 @@ from digideep.environment.common.monitor import Monitor
 from digideep.environment.common.vec_env.subproc_vec_env import SubprocVecEnv
 from digideep.environment.common.vec_env.dummy_vec_env import DummyVecEnv
 # from digideep.environment.common.vec_env.vec_monitor import VecMonitor
+from digideep.environment.wrappers import WrapperNormalizedActions
 from digideep.environment.wrappers import WrapperAddTimestep
 from digideep.environment.wrappers import WrapperTransposeImage
 from digideep.environment.wrappers import WrapperDummyMultiAgent
@@ -143,6 +144,9 @@ class MakeEnvironment:
                 assert len(obs_shape) == 3
                 assert obs_shape[2] in [1, 3]
                 env = WrapperTransposeImage(env)
+            
+            if self.params["wrappers"]["add_normalized_actions"]:
+                env = WrapperNormalizedActions(env)
             
             if self.params["wrappers"]["add_dummy_multi_agent"]:
                 env = WrapperDummyMultiAgent(env, **self.params["wrappers_args"]["DummyMultiAgent"])
