@@ -29,7 +29,7 @@ Implementation steps
     Complete your parameters file as you move forward. Run the program early.
     Try to debug the interface issues as soon as possible.
 
-4. In your agent's class, override reset_hidden_state if you are planning to use recursive policies.
+4. In your agent's class, override reset_hidden_state if you are planning to use recurrent policies.
 5. Now, the explorer should work fine, and the trajectories may be stored in the memory. Now, it is time
    to start implementation of your policy.
 
@@ -46,9 +46,10 @@ Implementation steps
    in your agent to generate actions based on the policy.
 8. When policy is done, it's time to implement the sampler for your method. The sampler is typically
    used at the beginning of the :func:`~digideep.agent.base.AgentBase.step` function of the agent.
+9. Implement :func:`~digideep.agent.base.AgentBase.step` function. This is the body of your method.
    At the same time, :func:`~digideep.agent.base.AgentBase.update` function can be implemented. It is
    usually just a loop of calls on the :func:`~digideep.agent.base.AgentBase.step` function.
-9. At this point, you have successfully finished implementation of your agent. Now it's time to debug.
-   You may use the :class:`~digideep.utility.profiling.Profiler` and :class:`~digideep.utility.monitoring.Monitor`
-   tools to inspect the values inside your code and watch the timings.
+10. At this point, you have successfully finished implementation of your agent. Now it's time to debug.
+    You may use the :class:`~digideep.utility.profiling.Profiler` and :class:`~digideep.utility.monitoring.Monitor`
+    tools to inspect the values inside your code and watch the timings.
 
