@@ -75,5 +75,10 @@ class PolicyBase(object):
 
         """
         raise NotImplementedError
+    def evaluate_actions(self, *args):
+        """This function will evaluate (for on-policy methods) or generate (for off-policy methods) an action in retrospect. 
+        `generate_actions` functions works without gradients. However, gradients are important in `evaluate_actions`.
+        """
+        raise NotImplementedError
     
     
