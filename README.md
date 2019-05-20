@@ -11,6 +11,7 @@ Digideep is written to be developer-friendly with self-descriptive codes and ext
 some debugging tools and guidelines for implementing new methods. Digideep has the following methods implemented:
 
 * DDPG - Deep Deterministic Policy Gradient
+* SAC - Soft Actor Critic
 * PPO - Proximal Policy Optimization
 
 Please use the following BibTeX entry to cite this repository in your publications:
