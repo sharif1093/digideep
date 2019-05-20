@@ -1,6 +1,7 @@
 from collections import OrderedDict as odict
 import time
 import numpy as np
+from .json_encoder import JsonEncoder
 
 SHOULD_PROFILE = True
 
@@ -31,51 +32,62 @@ class Profiler:
     """
 
     def __init__(self):
+        self.filename = None
         self.reset()
 
     def reset(self):
-        self.starts = odict()
-        self.totals = odict()
-        self.occurs = odict()
-    
+        self.data = odict()
+        
     def start(self, name):
-        if name in self.starts:
-            assert self.starts[name] == None, "The previous start should be lapsed first for [{:s}]".format(name)
-        self.starts[name] = time.time()
+        if name in self.data:
+            assert self.data[name]["starts"] == None, "The previous start should be lapsed first for [{:s}]".format(name)
+        else:
+            self.data[name] = {"starts":None, "occurs":None, "totals":None}
+        self.data[name]["starts"] = time.time()
 
     def lapse(self, name):
-        assert name in self.starts and self.starts[name] is not None, "You should first start for [{:s}]".format(name)
-        elapsed = time.time()-self.starts[name]
+        assert name in self.data and self.data[name]["starts"] is not None, "You should first start for [{:s}]".format(name)
+        elapsed = time.time() - self.data[name]["starts"]
 
-        if name in self.totals:
-            self.totals[name] += elapsed
-            self.occurs[name] += 1
+        if self.data[name]["totals"] is None:
+            self.data[name]["totals"] = elapsed
+            self.data[name]["occurs"] = 1
         else:
-            self.totals[name] = elapsed
-            self.occurs[name] = 1
+            self.data[name]["totals"] += elapsed
+            self.data[name]["occurs"] += 1
 
-        self.starts[name] = None
+        self.data[name]["starts"] = None
 
     def get_time_average(self, name):
-        assert name in self.totals
-        return self.totals[name]/self.occurs[name]
+        assert name in self.data
+        return self.data[name]["totals"]/self.data[name]["occurs"]
 
     def get_time_overall(self, name):
-        assert name in self.totals
-        return self.totals[name]
+        assert name in self.data
+        return self.data[name]["totals"]
 
     def get_occurence(self, name):
-        assert name in self.totals
-        return self.occurs[name]
+        assert name in self.data
+        return self.data[name]["occurs"]
 
     def get_keys(self):
-        return list(self.starts.keys())
+        return list(self.data.keys())
     
     def __repr__(self):
         res = ""
         for k in self.get_keys():
             res += (">> {:s} [{:d}x, {:.1f}s]\n".format(k, self.get_occurence(k), self.get_time_overall(k)))
         return res
+    
+    def set_output_file(self, path):
+        self.filename = path
+    def dump(self, meta = {}):
+        if self.filename:
+            f = open(self.filename, 'a')
+            out = {"meta":meta,"data":self.data}
+            jsonstring = JsonEncoder(out)
+            print(jsonstring, flush=True, file=f)
+            f.close()
 
 # Global profiler object (use KeepTime to interact with this object):
 profiler = Profiler()

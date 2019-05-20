@@ -18,11 +18,30 @@ def dump_dict_as_json(filename, dic, sort_keys=False):
     f = open(filename, 'w')
     f.write(json.dumps(dic, indent=2, sort_keys=sort_keys))
     f.close()
+def load_json_as_dict(filename):
+    f = open(filename, 'r')
+    try:
+        dic = json.load(f)
+    except json.JSONDecodeError as exc:
+        print(exc)
+        dic = {}
+    f.close()
+    return dic
 
 def dump_dict_as_yaml(filename, dic):
     f = open(filename, 'w')
     f.write(yaml.dump(dic, indent=2))
     f.close()
+def load_yaml_as_dict(filename):
+    f = open(filename, 'r')
+    try:
+        # https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
+        dic = yaml.load(f, Loader=yaml.FullLoader)
+    except yaml.YAMLError as exc:
+        print(exc)
+        dic = {}
+    f.close()
+    return dic
 
 def seed_all(seed, cuda_deterministic = False):
     np.random.seed(seed)

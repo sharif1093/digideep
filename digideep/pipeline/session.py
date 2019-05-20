@@ -4,6 +4,8 @@ from shutil import copytree, copyfile, ignore_patterns
 from digideep.utility.logging import logger
 from digideep.utility.toolbox import dump_dict_as_json, dump_dict_as_yaml, get_module
 from digideep.utility.json_encoder import JsonDecoder
+from digideep.utility.monitoring import monitor
+from digideep.utility.profiling import profiler
 
 import pickle, torch
 from copy import deepcopy
@@ -69,6 +71,9 @@ class Session(object):
         self.is_playing = True if self.args["play"] else False
         if self.is_playing:
             assert self.is_loading, "For playing the checkpoint path should be specified using `--load-checkpoint`."
+        
+        # TODO: Change the path for loading the packages?
+        # sys.path.insert(0, '/path/to/whatever')
 
         if self.args["monitor_cpu"] or self.args["monitor_gpu"]:
             # Force visdom ON if "--monitor-cpu" or "--monitor-gpu" are provided.
@@ -99,7 +104,8 @@ class Session(object):
         self.state['file_params'] = os.path.join(self.state['path_session'], 'params.yaml')
         self.state['file_report'] = os.path.join(self.state['path_session'], 'report.log')
         self.state['file_visdom'] = os.path.join(self.state['path_session'], 'visdom.log')
-        
+        self.state['file_varlog'] = os.path.join(self.state['path_session'], 'varlog.json')
+        self.state['file_prolog'] = os.path.join(self.state['path_session'], 'prolog.json')
         
         if not os.path.exists(self.state['path_base_sessions']):
             os.makedirs(self.state['path_base_sessions'])
@@ -118,6 +124,8 @@ class Session(object):
         
         self.set_device()
         self.initLogger()
+        self.initVarlog()
+        self.initProlog()
         if self.args["visdom"]:
             self.initVisdom()
         if not self.is_playing:
@@ -144,6 +152,12 @@ class Session(object):
         logger.set_logfile(self.state['file_report'])
         logger.set_log_level(self.args["log_level"])
     
+    def initVarlog(self):
+        monitor.set_output_file(self.state['file_varlog'])
+    
+    def initProlog(self):
+        profiler.set_output_file(self.state['file_prolog'])
+    
     def initVisdom(self):
         """
         This function initializes the connection to the Visdom server. The Visdom server must be running.
@@ -165,18 +179,20 @@ class Session(object):
         modules = set(self.args["save_modules"])
         # Add digideep per se to the saved modules.
         modules.add("digideep")
+        modules_path = os.path.join(self.state['path_session'], 'modules')
         for mod in modules:
             real_mod = get_module(mod)
             module_source = real_mod.__path__[0]
-            module_target = os.path.join(self.state['path_session'], 'modules', mod)
+            module_target = os.path.join(modules_path, mod)
             copytree(module_source, module_target, ignore=ignore_patterns('*.pyc', '__pycache__'))
+            if mod == "digideep":
+                digideep_path = module_source
 
-        # Copy loader.py to the session root path
-        # copyfile(os.path.join(module_source, 'loader.py'), os.path.join(self.state['path_session'], 'loader.py'))
+        # Copy saam.py to the session root path
+        copyfile(os.path.join(digideep_path, 'saam.py'), os.path.join(self.state['path_session'], 'saam.py'))
         # Create __init__.py at the session root path
         with open(os.path.join(self.state['path_session'], '__init__.py'), 'w') as f:
-            print("", file=f)
-            # print("from .loader import loader", file=f)
+            print("from .saam import loader", file=f)
             # print("from .loader import ModelCarousel", file=f)
 
     def runMonitor(self):

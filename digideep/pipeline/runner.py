@@ -317,7 +317,13 @@ class Runner:
         # Printing monitoring information:
         logger("MONITORING:\n"+str(monitor))
 
+        meta = {"epoch":self.state["i_epoch"],
+                "frame":self.state["i_frame"],
+                "roll":self.state["i_rolls"]}
+
+        profiler.dump(meta)
         profiler.reset()
+        monitor.dump(meta)
         monitor.reset()
 
         # TODO: We can check, and if self.session.args["visdom"] is true send results to visdom as well.
