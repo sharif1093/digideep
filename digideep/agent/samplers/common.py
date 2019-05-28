@@ -110,13 +110,14 @@ def truncate_datalists(chunk, info):
 def check_nan(chunk, info):
     """This sampler function has debugging purposes and will publish a warning message if there are NaN values in the chunk.
     """
-    for key in chunk:
-        if np.isnan(chunk[key]).any():
-            logger.warn("%s:%s[%d]: Found NaN '%s'." % 
-                        (os.path.basename(inspect.stack()[2].filename),
-                         inspect.stack()[2].function,
-                         inspect.stack()[2].lineno,
-                         key))
+    if chunk:
+        for key in chunk:
+            if np.isnan(chunk[key]).any():
+                logger.warn("%s:%s[%d]: Found NaN '%s'." % 
+                            (os.path.basename(inspect.stack()[2].filename),
+                            inspect.stack()[2].function,
+                            inspect.stack()[2].lineno,
+                            key))
     return chunk
 
 def check_shape(chunk, info):
@@ -126,8 +127,9 @@ def check_shape(chunk, info):
                 (os.path.basename(inspect.stack()[2].filename),
                  inspect.stack()[2].function,
                  inspect.stack()[2].lineno))
-    for key in chunk:
-        logger.warn("%s %s" % ( key, str(chunk[key].shape)))
+    if chunk:
+        for key in chunk:
+            logger.warn("%s %s" % ( key, str(chunk[key].shape)))
     return chunk
 
 def check_stats(chunk, info):
@@ -137,9 +139,9 @@ def check_stats(chunk, info):
                 (os.path.basename(inspect.stack()[2].filename),
                  inspect.stack()[2].function,
                  inspect.stack()[2].lineno))
-
-    for key in chunk:
-        logger.warn("{} = {:.2f} (\xB1{:.2f} 95%)".format(key, np.nanmean(chunk[key]), 2*np.nanstd(chunk[key])))
+    if chunk:
+        for key in chunk:
+            logger.warn("{} = {:.2f} (\xB1{:.2f} 95%)".format(key, np.nanmean(chunk[key]), 2*np.nanstd(chunk[key])))
     return chunk
 
 def print_line(chunk, info):
