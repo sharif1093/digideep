@@ -7,6 +7,7 @@ See Also:
 """
 
 import numpy as np
+from collections import OrderedDict
 from digideep.utility.logging import logger
 
 
@@ -45,7 +46,7 @@ def flatten_dict(dic, sep="/", prefix=""):
         {"/a":1, "/b/c":1, "/b/d/e":2, "/b/d/f":3}
     
     """
-    res = {}
+    res = OrderedDict()
     for key, value in dic.items():
         if isinstance(value, dict):
             tmp = flatten_dict(value, sep=sep, prefix=join_keys(prefix,key,sep))
@@ -324,7 +325,7 @@ def list_of_dicts_to_flattened_dict_of_lists(List, length):
     # This is used for info. But can be used for other list of dicts
     if isinstance(List, dict):
         return List
-    Dict = {}
+    Dict = OrderedDict()
     for i in range(len(List)):
         update_dict_of_lists(Dict, flatten_dict(List[i]), index=i)    
     # Here, complete_dict_of_list cannot be in the loop.
@@ -337,3 +338,7 @@ def list_of_dicts_to_flattened_dict_of_lists(List, length):
     complete_dict_of_list(Dict, length=length)
     return Dict
 
+def flattened_dict_of_lists_to_dict_of_numpy(dic):
+    for key in dic:
+        dic[key] = np.asarray(dic[key], dtype=np.float32)
+    return dic

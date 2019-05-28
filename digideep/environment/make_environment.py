@@ -2,36 +2,41 @@
 This module is inspired by `pytorch-a2c-ppo-acktr <https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/>`_.
 """
 
-
 import numpy as np
 import os
 
-from digideep.environment.common.atari_wrappers import make_atari, wrap_deepmind
-from digideep.environment.common.monitor import Monitor
+from digideep.utility.toolbox import get_module, get_class
+from digideep.utility.logging import logger
 
-from digideep.environment.common.vec_env.subproc_vec_env import SubprocVecEnv
-from digideep.environment.common.vec_env.dummy_vec_env import DummyVecEnv
-# from digideep.environment.common.vec_env.vec_monitor import VecMonitor
-from digideep.environment.wrappers import WrapperNormalizedActions
-from digideep.environment.wrappers import WrapperAddTimestep
-from digideep.environment.wrappers import WrapperTransposeImage
-from digideep.environment.wrappers import WrapperDummyMultiAgent
-from digideep.environment.wrappers import VecFrameStackAxis
-from digideep.environment.wrappers import VecNormalize
-from digideep.environment.wrappers import VecSaveState
-
+################################################
+## Viutal wrappers ##
+#####################
 from gym.wrappers.monitor import Monitor as MonitorVideoRecorder
 
-from digideep.utility.toolbox import get_module
+from .common.atari_wrappers import make_atari, wrap_deepmind
 
-from digideep.utility.logging import logger
+# from .common.vec_env.vec_monitor import VecMonitor
+from .common.monitor import Monitor
+
+from .common.vec_env.subproc_vec_env import SubprocVecEnv
+from .common.vec_env.dummy_vec_env import DummyVecEnv
+
+## Our essential wrappers
+from .wrappers.save_state import VecSaveState
+
+from .wrappers.adapter import WrapperDummyMultiAgent
+from .wrappers.adapter import WrapperDummyDictObs
+from .wrappers.adapter import WrapperFlattenObsDict
+from .wrappers.adapter import VecObsRewInfoActWrapper
+################################################
+
 from gym import spaces
 
 ################################################
 ###      Importing Environment Packages      ###
 ################################################
 import gym
-# Even though we don't need dm_control to be loaded here, it helps in initializing glfw.
+# Even though we don't need dm_control to be loaded here, it helps in initializing glfw when using MuJoCo 1.5.
 # import digideep.environment.dmc2gym
 
 from gym.envs.registration import registry
@@ -112,44 +117,44 @@ class MakeEnvironment:
         import sys # For debugging
         def _f():
             env = gym.make(self.params["name"])
-
+            env.seed(self.seed + rank)
+            
+            ## Atari environment wrappers
             is_atari = hasattr(gym.envs, 'atari') and isinstance(env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
             if is_atari:
                 env = make_atari(self.params["name"])
+            if is_atari and len(env.observation_space.shape) == 3:
+                env = wrap_deepmind(env)
 
-            env.seed(self.seed + rank)
 
-            ## Add the requested wrappers
-            # This adds the timestep as an observation to the environment. With this the agent will know the time.
-            if self.params["wrappers"]["add_time_step"]:
-                assert len(env.observation_space.shape) == 1, "AddTimeStep supports 1d observations."
-                assert str(env).find('TimeLimit') > -1, "AddTimeStep need environment to be a TimeLimit."
-                env = WrapperAddTimestep(env)
-
-            if not force_no_monitor and self.params["wrappers"]["add_monitor"]:
+            ## Add monitoring wrappers (not optional).
+            if not force_no_monitor:
                 log_dir = os.path.join(self.session["path_monitor"], str(rank))
-                env = Monitor(env, log_dir, **self.params["wrappers_args"]["Monitor"])
-            
+                env = Monitor(env, log_dir, **self.params["main_wrappers"]["Monitor"])
+
+
+            ## Add a video recorder if mode == "eval".
             if self.mode == "eval":
                 videos_dir = os.path.join(self.session["path_videos"], str(rank))
                 env = MonitorVideoRecorder(env, videos_dir, video_callable=lambda id:True)
-            # elif self.mode == "train":
-            #     env = MonitorVideoRecorder(env, videos_dir)
 
-            if is_atari and len(env.observation_space.shape) == 3:
-                env = wrap_deepmind(env)
+            ## Dummy Dict Action and Observation
+            if not isinstance(env.action_space, spaces.Dict):
+                env = WrapperDummyMultiAgent(env, **self.params["main_wrappers"]["WrapperDummyMultiAgent"])
+            if not isinstance(env.observation_space, spaces.Dict):
+                env = WrapperDummyDictObs(env, **self.params["main_wrappers"]["WrapperDummyDictObs"])
             
-            if self.params["wrappers"]["add_image_transpose"]:
-                obs_shape = env.observation_space.shape
-                assert len(obs_shape) == 3
-                assert obs_shape[2] in [1, 3]
-                env = WrapperTransposeImage(env)
+            ## Flatten the observation_space (which is by now of spaces.Dict type.)
+            # spaces.Dict({"obs1":spaces.Box, "obs2": spaces.Dict({"image1":spaces.Box, "sensor2":spaces.Discrete})})
+            # Will be:
+            # spaces.Dict({"/obs1":spaces.Box, "/obs2/image1":spaces.Box, "/obs2/sensor2":spaces.Discrete})
+            env = WrapperFlattenObsDict(env)
             
-            if self.params["wrappers"]["add_normalized_actions"]:
-                env = WrapperNormalizedActions(env)
-            
-            if self.params["wrappers"]["add_dummy_multi_agent"]:
-                env = WrapperDummyMultiAgent(env, **self.params["wrappers_args"]["DummyMultiAgent"])
+            ## NOTE: We do not flatten the action_space, since we usually deal with 1-level dicts for actions.
+            ##       If nested actions are to be considered we can upgrade action_spaces to flattened spaces.
+
+            ## Adding arbitrary wrapper stack
+            env = self.run_wrapper_stack(env, self.params["norm_wrappers"])
 
             return env
         return _f
@@ -157,52 +162,39 @@ class MakeEnvironment:
     def create_envs(self, num_workers=1, force_no_monitor=False):
         envs = [self.make_env(rank=idx, force_no_monitor=force_no_monitor) for idx in range(num_workers)]
         
-        # NOTE: We don't use DummyVecEnvs to avoid performing glfw.init() on the Main process.
+        ## NOTE: We do not use DummyVecEnvs when num_workers==1 to avoid running glfw.init() on the Main process.
         if self.mode == "eval":
             envs = DummyVecEnv(envs)
         else:
             envs = SubprocVecEnv(envs)
         
-        # NOTE: We don't use DummyVecEnvs to avoid performing glfw.init() on the Main process.
-        # if num_workers > 1:
-        #     envs = SubprocVecEnv(envs)
-        # else:
-        #     envs = DummyVecEnv(envs)
-        
-        # Monitor seems to have more interesting features than VecMonitor. So we may not use VecMonitor.
+        ## Converting data structure of obs/rew/infos/actions:
+        envs = VecObsRewInfoActWrapper(envs)
+
+        ## Monitor seems to have more interesting features than VecMonitor. So we may not use VecMonitor.
         # envs = VecMonitor(envs, 'test.log')
 
-        # TODO: VecNormalize will not work with Dict observation spaces.
-        # Works only for vector observations, not for images
-        if self.params["wrappers"]["add_vec_normalize"]:
-            assert len(envs.observation_space.shape) == 1, "VecNormalize supports 1d (vector) observations"
-            training = True if self.mode=="train" else False
-            envs = VecNormalize(envs, **self.params["wrappers_args"]["VecNormalize"], training=training)
-            ## NOTE: It is OK for gamma to be "None", but that means that we are not interested in normalizing the returns.
-            # if gamma is None:
-            #     envs = VecNormalize(envs, ret=False)
-            # else:
-            #     envs = VecNormalize(envs, gamma=gamma)
-
-        # TODO: VecFrameStackAxis will not work with Dict observation spaces.
-        if self.params["wrappers"]["add_frame_stack_axis"]:
-            # assert len(envs.observation_space.shape) == 3, "VecFrameStack supports 3d observations, i.e. images"
-            # envs = VecFrameStack(envs, **self.params["wrappers_args"]["VecFrameStack"])
-            envs = VecFrameStackAxis(envs, **self.params["wrappers_args"]["VecFrameStackAxis"])
+        ## Adding arbitrary wrapper stack
+        envs = self.run_wrapper_stack(envs, self.params["vect_wrappers"])
         
-        # We must add VecSaveState to save the state of stateful wrappers.
+        ## We must add VecSaveState as the last wrapper to save the state of stateful wrappers recursively.
         envs = VecSaveState(envs)
 
         return envs
-        
+    
+    def run_wrapper_stack(self, env, stack):
+        for index in range(len(stack)):
+            if stack[index]["enabled"]:
+                wrapper_class = get_class(stack[index]["name"])
+                # We pass mode to the wrapper as well, so the wrapper can adjust itself.
+                env = wrapper_class(env, mode=self.mode, **stack[index]["args"])
+        return env
 
     def get_config(self):
         """This function will generate a dict of interesting specifications of the environment.
 
+        Note: Observation and action can be nested spaces.Dict.
         """
-
-        # TODO: Assume nested dicts for observation and action
-        #       Create nested dicts for the shapes of both.
 
         _f = self.make_env(rank=0, force_no_monitor=True)
         venv = self.create_envs(num_workers=1, force_no_monitor=True)

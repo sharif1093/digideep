@@ -21,8 +21,9 @@ def get_sample_memory(buffer, info):
 
     """
     batch_size = info["batch_size"]
-    
     num_workers = info["num_workers"]
+    observation_path = info["observation_path"]
+
     N = info["num_records"] - 1 # We don't want to consider the last "incomplete" record, hence "-1"
 
     masks_arr = buffer["/masks"][:,:N]
@@ -48,8 +49,11 @@ def get_sample_memory(buffer, info):
     batch = {}
     for key in buffer:
         batch[key] = buffer[key][sample_tabular[0],sample_tabular[1]]
+    
+    observation_path = "/observations" + observation_path
+    batch["/obs_with_key"] = batch[observation_path]
     # Adding predictive keys
-    batch["/observations_2"] = buffer["/observations"][sample_tabular_2[0],sample_tabular_2[1]]
+    batch["/obs_with_key_2"] = buffer[observation_path][sample_tabular_2[0],sample_tabular_2[1]]
     
     batch = flatten_first_two(batch)
     return batch

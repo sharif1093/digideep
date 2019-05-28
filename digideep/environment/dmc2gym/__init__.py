@@ -11,7 +11,8 @@ for domain_name, task_name in suite.BENCHMARKING:
         id=gym_id,
         entry_point="digideep.environment.dmc2gym.wrapper:DmControlWrapper",
         kwargs={'dmcenv_creator':EnvCreatorSuite(domain_name, task_name, task_kwargs=None, environment_kwargs=None, visualize_reward=True),
-                'flat_observation':True}
+                'flat_observation':True, # Should be True
+                'observation_key':"agent"}
     )
 
 

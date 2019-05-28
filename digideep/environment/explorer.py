@@ -1,8 +1,10 @@
 import numpy as np
 import time
+from collections import OrderedDict
 
 from digideep.environment import MakeEnvironment
-from .data_helpers import flatten_dict, update_dict_of_lists, complete_dict_of_list, convert_time_to_batch_major, extract_keywise, dict_of_lists_to_list_of_dicts, list_of_dicts_to_flattened_dict_of_lists
+from .data_helpers import flatten_dict, update_dict_of_lists, complete_dict_of_list, convert_time_to_batch_major, extract_keywise
+
 # from mujoco_py import MujocoException
 # from dm_control.rl.control import PhysicsError
 
@@ -89,15 +91,25 @@ class Explorer:
         """This function will extract episode information from infos and will send them to
         :class:`~digideep.utility.monitoring.Monitor` class.
         """
-        for info in infos:
+        # print(infos)
+        if '/episode/r' in infos.keys():
+            rewards = infos['/episode/r']
+            for rew in rewards:
+                if not np.isnan(rew):
+                    self.state["n_episode"] += 1
+                    monitor("/explore/reward/"+self.params["mode"], rew)
+        #     print("Everything is here:", episode)
+        #     # for e in 
+        #     # self.state["n_episode"] += 1
+        #     # r = info['episode']['r']
+        #     # monitor("/explore/reward/"+self.params["mode"], r)
+        
+        # for info in infos:
             # This episode keyword only exists if we use a Monitor wrapper.
             # This keyword will only appear at the "reset" times.
             # TODO: If this is a true multi-agent system, then the rewards
             #       must be separated as well!
-            if 'episode' in info.keys():
-                self.state["n_episode"] += 1
-                r = info['episode']['r']
-                monitor("/explore/reward/"+self.params["mode"], r)
+            
 
     def close(self):
         """It closes all environments.
@@ -107,9 +119,8 @@ class Explorer:
     def reset(self):
         """Will reset the Explorer and all of its states. Will set ``was_reset`` to ``True`` to prevent immediate resets.
         """
-
         self.state["observations"] = self.envs.reset()
-        self.state["masks"] = np.array([[1]]*self.params["num_workers"], dtype=np.float32)
+        self.state["masks"] = np.array([[0]]*self.params["num_workers"], dtype=np.float32)
 
         # The initial hidden_state is not saved in the memory. The only use for it is
         # getting passed to the action_generator.
@@ -135,7 +146,9 @@ class Explorer:
 
         with KeepTime("/explore/step/prestep/to_numpy"):
             # TODO: Is it necessary for conversion of obs?
-            observations = np.array(self.state["observations"], dtype=np.float32)
+            # NOTE: The np conversion will not work if observation is a dictionary.
+            # observations = np.array(self.state["observations"], dtype=np.float32)
+            observations = self.state["observations"]
             masks = self.state["masks"]
             hidden_state = self.state["hidden_state"]
 
@@ -187,16 +200,15 @@ class Explorer:
         
         with KeepTime("/explore/step/envstep"):
             # Prepare actions
-            actions_dict = extract_keywise(pre_transition["agents"], "actions")
-            actions = dict_of_lists_to_list_of_dicts(actions_dict, self.params["num_workers"])
+            actions = extract_keywise(pre_transition["agents"], "actions")
 
             # Step
             self.state["observations"], rewards, dones, infos = self.envs.step(actions)
             # Post-step
             self.state["hidden_state"] = extract_keywise(pre_transition["agents"], "hidden_state")
             self.state["masks"] = np.array([0.0 if done_ else 1.0 for done_ in dones], dtype=np.float32).reshape((-1,1))
-            rewards = rewards.reshape((-1,1))
 
+        # TODO: Adapt with the new dict_of_lists data structure.
         with KeepTime("/explore/step/report_reward"):
             self.report_rewards(infos)
 
@@ -212,16 +224,21 @@ class Explorer:
         #     # return self.run()
         
         with KeepTime("/explore/step/poststep"):
-            if np.isnan(self.state["observations"]).any():
-                logger.warn('NaN caught in observations during rollout generation.', 'step =', self.state["steps"])
-                raise ValueError
+            # TODO: Sometimes the type of observations is "dict" which shouldn't be. Investigate the reason.
+            if isinstance(self.state["observations"], OrderedDict) or isinstance(self.state["observations"], dict):
+                for key in self.state["observations"]:
+                    if np.isnan(self.state["observations"][key]).any():
+                        logger.warn('NaN caught in observations during rollout generation.', 'step =', self.state["steps"])
+                        raise ValueError
+            else:
+                if np.isnan(self.state["observations"]).any():
+                    logger.warn('NaN caught in observations during rollout generation.', 'step =', self.state["steps"])
+                    raise ValueError
                 ## Retry??
                 # return self.run()
 
             self.state["steps"] += 1
             self.state["timesteps"] += self.params["num_workers"]
-
-            infos = list_of_dicts_to_flattened_dict_of_lists(infos, length=self.params["num_workers"])
 
             transition = dict(**pre_transition,
                               rewards=rewards,

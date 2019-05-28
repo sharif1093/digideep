@@ -88,8 +88,11 @@ class PPO(AgentBase):
         
         """
 
+        observation_path = self.params.get("observation_path", "/agent")
+        observations_ = observations[observation_path].astype(np.float32)
+
         with KeepTime("/explore/step/prestep/gen_action/to_torch"):
-            observations_ = torch.from_numpy(observations).to(self.device)
+            observations_ = torch.from_numpy(observations_).to(self.device)
             hidden_state_ = torch.from_numpy(hidden_state).to(self.device)
             masks_ = torch.from_numpy(masks).to(self.device)
         
@@ -137,7 +140,7 @@ class PPO(AgentBase):
             for batch in data_sampler:
                 with KeepTime("/update/step/batches/to_torch"):
                     # Environment
-                    observations = torch.from_numpy(batch["/observations"]).to(self.device)
+                    observations = torch.from_numpy(batch["/observations"+self.params["observation_path"]]).to(self.device)
                     masks = torch.from_numpy(batch["/masks"]).to(self.device)
                     # Agent
                     hidden_state = torch.from_numpy(batch["/agents/"+self.params["name"]+"/hidden_state"]).to(self.device)

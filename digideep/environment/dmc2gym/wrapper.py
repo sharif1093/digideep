@@ -11,12 +11,28 @@ import numpy as np
 import collections
 import sys
 import copy
+import six
 
 from .spec2space import spec2space
 from .viewer import Viewer
 
-from dm_control.rl.control import FLAT_OBSERVATION_KEY, flatten_observation, _spec_from_observation
+from dm_control.rl.control import flatten_observation
+# from dm_control.rl.control import FLAT_OBSERVATION_KEY
 from dm_control.rl.control import PhysicsError
+from dm_control.rl import specs
+
+
+def _spec_from_observation(observation):
+    result = collections.OrderedDict()
+    for key, value in six.iteritems(observation):
+        if isinstance(value, collections.OrderedDict):
+            result[key] = _spec_from_observation(value)
+        elif isinstance(value, dict):
+            raise NotImplementedError("'dict' types in observations are not supported as they may not preserve order. Use OrderedDict instead.")
+        else:
+            result[key] = specs.ArraySpec(value.shape, value.dtype, name=key)
+    return result
+
 
 class DmControlWrapper(Env, EzPickle):
     """Class to convert dm_control environments into gym environments.
@@ -29,9 +45,10 @@ class DmControlWrapper(Env, EzPickle):
             A callable object can delay the creation of the environment until the time we need it.
         flat_observation (bool): Whether to flatten the observation dict or not.
     """
-    def __init__(self, dmcenv_creator, flat_observation=False):
+    def __init__(self, dmcenv_creator, flat_observation=False, observation_key="agent"):
         self.dmcenv = dmcenv_creator()
         self._flat_observation = flat_observation
+        self._observation_key = observation_key
         # NOTE: We do not use the following to flatten observation to have more control over flattening and extracting "info".
         ## The next line will flatten the observations if we really need it.
         #### self.dmcenv._flat_observation = self._flat_observation
@@ -68,6 +85,9 @@ class DmControlWrapper(Env, EzPickle):
         command. Only then we can modify those parameters. All of the stuff in the
         "self.spec" are from that category; we should wait until make is called on
         the environment and then update those at the first time reset is called.
+
+        The attributes which are added by the "_delayed_init" function may be used in
+        wrappers. However, they shouldn't be used in the wrapper initilization.
         """
         if self._delayed_init_flag:
             return
@@ -121,10 +141,15 @@ class DmControlWrapper(Env, EzPickle):
             observation = self.dmcenv.task.get_observation(self.dmcenv.physics)
             self._extract_obs_info(observation)
             if self._flat_observation:
-                observation = flatten_observation(observation)
-                return _spec_from_observation(observation)[FLAT_OBSERVATION_KEY]
-            else:
-                return _spec_from_observation(observation)    
+                # observation = flatten_observation(observation)
+                # return _spec_from_observation(observation)[FLAT_OBSERVATION_KEY]
+                
+                observation = flatten_observation(observation, output_key=self._observation_key)
+            #     return _spec_from_observation(observation)
+            # else:
+            #     return _spec_from_observation(observation)
+            specs = _spec_from_observation(observation)
+            return specs
     
     def _get_observation(self, timestep):
         """ This function will extract the observation from the output of the ``dmcenv.step``'s timestep.
@@ -134,7 +159,9 @@ class DmControlWrapper(Env, EzPickle):
         """
         info = self._extract_obs_info(timestep.observation)
         if self._flat_observation:
-            return flatten_observation(timestep.observation)[FLAT_OBSERVATION_KEY], info
+            # return flatten_observation(timestep.observation)[FLAT_OBSERVATION_KEY], info
+
+            return flatten_observation(timestep.observation, output_key=self._observation_key), info
         else:
             return timestep.observation, info
 
