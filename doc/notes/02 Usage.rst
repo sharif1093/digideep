@@ -53,10 +53,10 @@ Training/Replaying
 
     # Change the parameters in command-line
     python -m digideep.main --params digideep.params.mujoco_ppo \
-        --cpanel '{"model_name":"DMBenchCheetahRun-v0"}'
+        --cpanel '{"model_name":"DMBenchCheetahRun-v0", "from_module":"digideep.environment.dmc2gym"}'
 
     python -m digideep.main --params digideep.params.mujoco_ppo \
-        --cpanel '{"model_name":"DMBenchCheetahRun-v0", "recurrent":True}'
+        --cpanel '{"model_name":"DMBenchCheetahRun-v0", "from_module":"digideep.environment.dmc2gym", "recurrent":True}'
     
 
 .. code-block:: bash
