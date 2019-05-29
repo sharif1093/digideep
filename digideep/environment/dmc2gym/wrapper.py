@@ -45,8 +45,8 @@ class DmControlWrapper(Env, EzPickle):
             A callable object can delay the creation of the environment until the time we need it.
         flat_observation (bool): Whether to flatten the observation dict or not.
     """
-    def __init__(self, dmcenv_creator, flat_observation=False, observation_key="agent"):
-        self.dmcenv = dmcenv_creator()
+    def __init__(self, dmcenv_creator, flat_observation=False, observation_key="agent", **extra_env_kwargs):
+        self.dmcenv = dmcenv_creator(**extra_env_kwargs)
         self._flat_observation = flat_observation
         self._observation_key = observation_key
         # NOTE: We do not use the following to flatten observation to have more control over flattening and extracting "info".

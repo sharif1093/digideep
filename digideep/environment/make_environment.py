@@ -113,10 +113,11 @@ class MakeEnvironment:
             logger.fatal("Environment '" + params["name"] + "' is not registered in the gym registry.")
             exit()
         
-    def make_env(self, rank, force_no_monitor=False):
+    def make_env(self, rank, force_no_monitor=False, extra_env_kwargs={}):
         import sys # For debugging
         def _f():
-            env = gym.make(self.params["name"])
+            # The header of gym.make(.): `def make(id, **kwargs)`
+            env = gym.make(self.params["name"], **extra_env_kwargs)
             env.seed(self.seed + rank)
             
             ## Atari environment wrappers
@@ -159,8 +160,8 @@ class MakeEnvironment:
             return env
         return _f
         
-    def create_envs(self, num_workers=1, force_no_monitor=False):
-        envs = [self.make_env(rank=idx, force_no_monitor=force_no_monitor) for idx in range(num_workers)]
+    def create_envs(self, num_workers=1, force_no_monitor=False, extra_env_kwargs={}):
+        envs = [self.make_env(rank=idx, force_no_monitor=force_no_monitor, extra_env_kwargs=extra_env_kwargs) for idx in range(num_workers)]
         
         ## NOTE: We do not use DummyVecEnvs when num_workers==1 to avoid running glfw.init() on the Main process.
         if self.mode == "eval":

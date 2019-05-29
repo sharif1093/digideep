@@ -28,13 +28,17 @@ class EnvCreator(EzPickle):
         self.visualize_reward = visualize_reward
         EzPickle.__init__(self, task, task_kwargs=task_kwargs, environment_kwargs=environment_kwargs, visualize_reward=visualize_reward)
     
-    def __call__(self):
+    def __call__(self, **extra_env_kwargs):
         """
         Returns:
             :obj:`dm_control.rl.control.Environment`: The ``dm_control`` environment.
         """
         task_kwargs_subs = self.task_kwargs or {}
-        if self.environment_kwargs is not None:
+
+        if extra_env_kwargs:
+            task_kwargs_subs.update(extra_env_kwargs)
+
+        if (self.environment_kwargs is not None) or not (self.environment_kwargs == {}):
             task_kwargs_subs = task_kwargs_subs.copy()
             task_kwargs_subs['environment_kwargs'] = self.environment_kwargs
         dmcenv = self.task(**task_kwargs_subs)
@@ -55,7 +59,8 @@ class EnvCreatorSuite(EzPickle):
         environment_kwargs (dict): The keywords that will pass to the environment maker function.
         visualize_reward (bool): Whether to visualize rewards in the viewer or not.
     """
-    def __init__(self, domain_name, task_name, task_kwargs=None, environment_kwargs=None, visualize_reward=False):
+    def __init__(self, domain_name, task_name, task_kwargs={}, environment_kwargs=None, visualize_reward=False):
+    # def __init__(self, domain_name, task_name, task_kwargs={}, environment_kwargs={}, visualize_reward=False):
         self.domain_name = domain_name
         self.task_name = task_name
         self.task_kwargs = task_kwargs
@@ -63,11 +68,14 @@ class EnvCreatorSuite(EzPickle):
         self.visualize_reward = visualize_reward
         EzPickle.__init__(self, domain_name, task_name, task_kwargs=task_kwargs, environment_kwargs=environment_kwargs, visualize_reward=visualize_reward)
 
-    def __call__(self):
+    def __call__(self, **extra_env_kwargs):
         """
         Returns:
             :obj:`dm_control.rl.control.Environment`: The ``dm_control`` environment.
         """
+        if extra_env_kwargs:
+            self.task_kwargs.update(extra_env_kwargs)
+
         dmcenv = suite.load(domain_name=self.domain_name,
                             task_name=self.task_name,
                             task_kwargs=self.task_kwargs,

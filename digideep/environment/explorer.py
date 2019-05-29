@@ -63,8 +63,9 @@ class Explorer:
         self.params = params
 
         # Create models
+        extra_env_kwargs = self.params.get("extra_env_kwargs", {})
         menv = MakeEnvironment(session, mode=self.params["mode"], seed=self.params["seed"], **self.params["env"])
-        self.envs = menv.create_envs(num_workers=self.params["num_workers"])
+        self.envs = menv.create_envs(num_workers=self.params["num_workers"], extra_env_kwargs=extra_env_kwargs)
         
         self.state = {}
         self.state["steps"] = 0
