@@ -4,22 +4,60 @@
 
 # Digideep
 
-A pipeline for fast prototyping Deep RL problems using [PyTorch](https://github.com/pytorch/pytorch)
-and [OpenAI's Gym](https://github.com/openai/gym) / [Deepmind's dm_control](https://github.com/deepmind/dm_control).
+## Introduction
+
+Developers who want to implement a new deep DeepRL algorithm, usually have to write a great amount of boilerplate code or alternatively use 3rd party packages which aim to provide the basics. However, understanding and modifying these 3rd party packages usually is not a trivial task, due to lack of either documentation or code readability/structure.
+
+Digideep tries to provide a well-documented complete pipeline for deep reinforcement learning problems, so that developers can jump directly to implementing their methods. Special attention has been paid to **decoupling** different components as well as making them **modular**.
+
+In Digideep, [OpenAI's Gym](https://github.com/openai/gym) and [Deepmind's dm_control](https://github.com/deepmind/dm_control) co-exist and can be used with the same interface. Thanks to decoupled simulation and training parts, both [TensorFlow ](https://www.tensorflow.org/) and [PyTorch](https://github.com/pytorch/pytorch) can be used to train the agents (however, the example methods in this code repository are implemented using PyTorch).
+
+Currently, the following methods are implemented in Digideep:
+
+* [DDPG](https://arxiv.org/abs/1509.02971) - Deep Deterministic Policy Gradient
+* [SAC](https://arxiv.org/abs/1801.01290) - Soft Actor Critic
+* [PPO](https://arxiv.org/abs/1707.06347) - Proximal Policy Optimization
 
 Digideep is written to be developer-friendly with self-descriptive codes and extensive documentation. It also provides
-some debugging tools and guidelines for implementing new methods. Digideep has the following methods implemented:
+some debugging tools and guidelines for implementing new methods.
 
-* DDPG - Deep Deterministic Policy Gradient
-* SAC - Soft Actor Critic
-* PPO - Proximal Policy Optimization
+## Features
+
+* **Developer-friendly** code:
+  * The code is highly readable and fairly easy to understand and modify.
+  * Extensive documentation to support the above.
+  * Written for _modularity_ and code _decoupling_.
+  * Provides _debugging tools_ as an assistance for implementation new methods.
+* Supports a **single-node multi-cpu multi-gpu** architecture.
+* Supports a **Dict Observation-Space/Action-Space** for neat communication with environments.
+* Can be used with both `dm_control`/`gym` using the same interface:
+  * Uses `dm_control`'s native viewer for viewing.
+  * Provides batch environments for both `dm_control` and `gym`.
+* Provides a **session-as-a-module (SaaM)** functionality to easily load saved sessions as a Python module for post-processing.
+* Controls all parameters from **a single `parameter` file** for transparency and easy control of all parameters from one place.
+* Supports **(de-)serialization** structurally.
+
+## Documentation
+
+Please visit https://digideep.readthedocs.io/en/latest/ for documentation.
+
+## Changelog
+
+* **_2019-05-20_**: Added Soft Actor-Critic (SAC). Added full support for Dict observation spaces.
+* **_2019-03-04_**: Digideep was launched.
+
+## Contributions
+
+Contributions are welcome. If you would like to contribute to Digideep consider [Pull Requests](https://github.com/sharif1093/digideep/pulls) and [Issues](https://github.com/sharif1093/digideep/issues) pages of the project.
+
+## Citation
 
 Please use the following BibTeX entry to cite this repository in your publications:
 
 ```bibtex
 @misc{digideep19,
   author = {Sharif, Mohammadreza},
-  title = {Digideep: A pipeline for implementing reinforcement learning problems},
+  title = {Digideep: A DeepRL pipeline for developers},
   year = {2019},
   publisher = {GitHub},
   journal = {GitHub repository},
@@ -27,33 +65,9 @@ Please use the following BibTeX entry to cite this repository in your publicatio
 }
 ```
 
-## Documentation
-
-Please visit https://digideep.readthedocs.io/en/latest/ for documentation.
-
-## Features
-
-The features of Digideep can be listed as following:
-
-* Developer-friendly code:
-  * The code is highly readable and fairly easy to understand and modify.
-  * Extensive documentation to support the above.
-  * Written for modularity and easy code reuse.
-  * Provides debugging tools as an assistance for implementation new methods.
-* Has a single-node multi-cpu multi-gpu architecture implemented to utilize CPU and GPU on a single node.
-* Connects to `dm_control` and uses `dm_control`'s native viewer for rendering.
-* Provides batch-environment for `dm_control` through OpenAI baseline's `VecEnv` wrapper.
-* Controls all parameters from one single `parameter` file for easier control.
-* Supports (de-)serialization structurally.
-
-
-## Changelog
-
-* **_2019-03-04_**: Digideep was launched.
-
 ## License
 
-This code is under BSD 2-clause (FreeBSD/Simplified) license. See [LICENSE](LICENSE).
+This code is under **FreeBSD** (BSD 2-clause) license. See [LICENSE](LICENSE).
 
 ## Acknowledgement
 
