@@ -27,13 +27,15 @@ class Loader:
     
     @property
     def getCheckpointsPath(self):
-        return os.path.join(self.root_path, "checkpoints/*")
+        return os.path.join(self.root_path, "checkpoints/")
     
-    # @property
-    # def getPlotsPath(self):
-    #     path = os.path.join(self.root_path, "plots/*")
-    #     # TODO: Create the path if it does not exist.
-    #     return path
+    @property
+    def getPlotsPath(self):
+        path = os.path.join(self.root_path, "plots/")
+        # Create the path if it does not exist.
+        if not os.path.exists(path):
+            os.makedirs(path)
+        return path
     
     @property
     def _getParamsPath(self):

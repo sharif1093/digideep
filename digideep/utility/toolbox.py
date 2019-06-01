@@ -36,7 +36,8 @@ def load_yaml_as_dict(filename):
     f = open(filename, 'r')
     try:
         # https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
-        dic = yaml.load(f, Loader=yaml.FullLoader)
+        # dic = yaml.load(f, Loader=yaml.FullLoader)
+        dic = yaml.load(f, Loader=yaml.UnsafeLoader)
     except yaml.YAMLError as exc:
         print(exc)
         dic = {}
