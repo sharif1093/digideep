@@ -23,19 +23,19 @@ some debugging tools and guidelines for implementing new methods.
 
 ## Features
 
-* **Developer-friendly** code:
+* Developer-friendly code:
   * The code is highly readable and fairly easy to understand and modify.
   * Extensive documentation to support the above.
   * Written for _modularity_ and code _decoupling_.
   * Provides _debugging tools_ as an assistance for implementation new methods.
-* Supports a **single-node multi-cpu multi-gpu** architecture.
-* Supports a **Dict Observation-Space/Action-Space** for neat communication with environments.
+* Supports single-node multi-cpu multi-gpu architecture.
+* Supports _dictionary observation/action spaces_ for neat communication with environments.
 * Can be used with both `dm_control`/`gym` using the same interface:
   * Uses `dm_control`'s native viewer for viewing.
   * Provides batch environments for both `dm_control` and `gym`.
-* Provides a **session-as-a-module (SaaM)** functionality to easily load saved sessions as a Python module for post-processing.
-* Controls all parameters from **a single `parameter` file** for transparency and easy control of all parameters from one place.
-* Supports **(de-)serialization** structurally.
+* Provides a session-as-a-module (SaaM) functionality to easily load saved sessions as a Python module for post-processing.
+* Controls all parameters from a _single `parameter` file_ for transparency and easy control of all parameters from one place.
+* Supports _(de-)serialization_ structurally.
 
 ## Documentation
 
