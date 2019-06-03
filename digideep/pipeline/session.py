@@ -6,6 +6,7 @@ from digideep.utility.toolbox import dump_dict_as_json, dump_dict_as_yaml, get_m
 from digideep.utility.json_encoder import JsonDecoder
 from digideep.utility.monitoring import monitor
 from digideep.utility.profiling import profiler
+from digideep.utility.name_generator import get_random_name
 
 import pickle, torch
 from copy import deepcopy
@@ -15,6 +16,17 @@ def generateTimestamp():
     now = datetime.datetime.now()
     timestamp = '{:%Y%m%d%H%M%S}'.format(now)
     return timestamp
+
+def make_unique_path_session(path_base_session, prefix="session_"):
+    session_name = prefix + generateTimestamp() + "_" + get_random_name()
+    path_session = os.path.join(path_base_session, session_name)
+    try:
+        os.makedirs(path_session)
+        return path_session
+    except FileExistsError as e:
+        return make_unique_path_session(path_base_session=path_base_session, prefix=prefix)
+
+
 
 class Session(object):
     """
@@ -95,7 +107,16 @@ class Session(object):
             checkpoint_path = os.path.split(self.args["load_checkpoint"])[0]
             self.state['path_base_sessions'] = os.path.join(os.path.split(checkpoint_path)[0], "evaluations")
 
-        self.state['path_session']     = os.path.join(self.state['path_base_sessions'], 'session_' + generateTimestamp())
+        # 1. Creating 'path_base_sessions', i.e. '/tmp/digideep_sessions':
+        if not os.path.exists(self.state['path_base_sessions']):
+            os.makedirs(self.state['path_base_sessions'])
+            # Create an empty __init__.py in it!
+            with open(os.path.join(self.state['path_base_sessions'], '__init__.py'), 'w') as f:
+                print("", file=f)
+
+        # 2. Create a unique 'path_session':
+        self.state['path_session']     = make_unique_path_session(self.state['path_base_sessions'], prefix="session_")
+
         self.state['path_checkpoints'] = os.path.join(self.state['path_session'], 'checkpoints')
         self.state['path_monitor']     = os.path.join(self.state['path_session'], 'monitor')
         self.state['path_videos']      = os.path.join(self.state['path_session'], 'videos')
@@ -106,20 +127,11 @@ class Session(object):
         self.state['file_visdom'] = os.path.join(self.state['path_session'], 'visdom.log')
         self.state['file_varlog'] = os.path.join(self.state['path_session'], 'varlog.json')
         self.state['file_prolog'] = os.path.join(self.state['path_session'], 'prolog.json')
-        
-        if not os.path.exists(self.state['path_base_sessions']):
-            os.makedirs(self.state['path_base_sessions'])
-            # Create an empty __init__.py in it!
-            with open(os.path.join(self.state['path_base_sessions'], '__init__.py'), 'w') as f:
-                print("", file=f)
 
-        if not os.path.exists(self.state['path_session']):
-            os.makedirs(self.state['path_session'])
-            if not self.is_playing:
-                os.makedirs(self.state['path_checkpoints'])
-            os.makedirs(self.state['path_monitor'])
-        else:
-            raise BaseException("Session path already exists, cannot proceed.")
+        # 3. Creating the rest of paths:
+        if not self.is_playing:
+            os.makedirs(self.state['path_checkpoints'])
+        os.makedirs(self.state['path_monitor'])
         
         
         self.set_device()
