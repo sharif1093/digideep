@@ -67,7 +67,7 @@ Please use the following BibTeX entry to cite this repository in your publicatio
 
 ## License
 
-This code is under **FreeBSD** (BSD 2-clause) license. See [LICENSE](LICENSE).
+BSD 2-clause [LICENSE](LICENSE).
 
 ## Acknowledgement
 
