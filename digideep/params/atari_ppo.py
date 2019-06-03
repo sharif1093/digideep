@@ -33,8 +33,8 @@ cpanel = OrderedDict()
 cpanel["epoch_size"]    = 2  # cycles
 cpanel["number_epochs"] = 100000
 cpanel["test_activate"] = False # Test Activate
-cpanel["test_interval"] = 10    # Test Interval Every #n Cycles
-cpanel["save_interval"] = 1     # Save Interval Every #n Cycles
+cpanel["test_interval"] = 10    # Test Interval Every #n Epochs
+cpanel["save_interval"] = 1     # Save Interval Every #n Epochs
 
 cpanel["seed"] = 0
 cpanel["cuda_deterministic"] = False # With TRUE we MIGHT get more deterministic results but at the cost of speed.
