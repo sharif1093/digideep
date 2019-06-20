@@ -1,11 +1,11 @@
-import os, sys
-import yaml, json
+def main():
+    import os, sys
+    import yaml, json
 
-from digideep.pipeline import Session, Runner
-from digideep.utility.logging import logger
-from digideep.utility.toolbox import get_module, strict_update
+    from digideep.pipeline import Session, Runner
+    from digideep.utility.logging import logger
+    from digideep.utility.toolbox import get_module, strict_update
 
-if __name__=="__main__":
     session = Session(root_path=os.path.dirname(os.path.realpath(__file__)))
 
     ##########################################
@@ -46,4 +46,5 @@ if __name__=="__main__":
         runner.train()
     ##########################################
 
-
+if __name__ == "__main__":
+    main()
