@@ -75,14 +75,20 @@ class Session(object):
     """
     def __init__(self, root_path):
         self.parse_arguments()
+
+        # If '--dry-run' is specified no reports should be generated. It is not relevant to whether
+        # we are loading from a checkpoint or running from scratch. If dry-run is there no reports
+        # should be generated.
+        self.dry_run = True if self.args["dry_run"] else False
+
         # TODO: If loading from a checkpoint, we must copy the visdom log
         #       from the previous path to the current one.
-        # TODO: If loading from a checkpoint, we must check the existence
-        #       of that path and whether that's a valid digideep session.
         self.is_loading = True if self.args["load_checkpoint"] else False
         self.is_playing = True if self.args["play"] else False
-        if self.is_playing:
-            assert self.is_loading, "For playing the checkpoint path should be specified using `--load-checkpoint`."
+        
+        # TODO: Should we check the following? We don't need to actually since it can be used with dry_run mode.
+        # if self.is_playing:
+        #     assert self.is_loading, "For playing the checkpoint path should be specified using `--load-checkpoint`."
         
         # TODO: Change the path for loading the packages?
         # sys.path.insert(0, '/path/to/whatever')
@@ -98,24 +104,29 @@ class Session(object):
         self.state['path_root'] = os.path.split(root_path)[0]
         
         # Session: Indicates where we want our codes to be stored
-        if not self.is_playing:
-            self.state['path_root_session']  = self.args["session_path"]
-            self.state['path_base_sessions'] = os.path.join(self.state['path_root_session'], 'digideep_sessions')
-        else:
+        if self.is_loading:
             # If we are playing a recorded checkpoint, we must save the results into the `evaluations` path
             # of that session.
             checkpoint_path = os.path.split(self.args["load_checkpoint"])[0]
             self.state['path_base_sessions'] = os.path.join(os.path.split(checkpoint_path)[0], "evaluations")
+        else:
+            # OK, we are loading from a checkpoint, just create session from scratch.
+            self.state['path_root_session']  = self.args["session_path"]
+            self.state['path_base_sessions'] = os.path.join(self.state['path_root_session'], 'digideep_sessions')
+            
 
         # 1. Creating 'path_base_sessions', i.e. '/tmp/digideep_sessions':
-        if not os.path.exists(self.state['path_base_sessions']):
+        if not os.path.exists(self.state['path_base_sessions']): # TODO: and not self.dry_run:
             os.makedirs(self.state['path_base_sessions'])
             # Create an empty __init__.py in it!
             with open(os.path.join(self.state['path_base_sessions'], '__init__.py'), 'w') as f:
                 print("", file=f)
 
         # 2. Create a unique 'path_session':
-        self.state['path_session']     = make_unique_path_session(self.state['path_base_sessions'], prefix="session_")
+        if not self.dry_run:
+            self.state['path_session'] = make_unique_path_session(self.state['path_base_sessions'], prefix="session_")
+        else:
+            self.state['path_session'] = os.path.join(self.state['path_base_sessions'], "no_session")
 
         self.state['path_checkpoints'] = os.path.join(self.state['path_session'], 'checkpoints')
         self.state['path_monitor']     = os.path.join(self.state['path_session'], 'monitor')
@@ -129,9 +140,10 @@ class Session(object):
         self.state['file_prolog'] = os.path.join(self.state['path_session'], 'prolog.json')
 
         # 3. Creating the rest of paths:
-        if not self.is_playing:
+        if not self.is_playing and not self.dry_run:
             os.makedirs(self.state['path_checkpoints'])
-        os.makedirs(self.state['path_monitor'])
+        if not self.dry_run:
+            os.makedirs(self.state['path_monitor'])
         
         
         self.set_device()
@@ -140,7 +152,9 @@ class Session(object):
         self.initProlog()
         if self.args["visdom"]:
             self.initVisdom()
-        if not self.is_playing:
+        # TODO: We don't need the "SaaM" when are loading from a checkpoint.
+        # if not self.is_playing:
+        if not self.is_loading:
             self.createSaaM()
         #################
         self.runMonitor() # Monitor CPU/GPU/RAM
@@ -155,20 +169,26 @@ class Session(object):
         if self.is_loading:
             logger.warn("Loading from:", self.args["load_checkpoint"])
         
-        print(':: The session will be stored in ' + self.state['path_session'])
+        if not self.dry_run:
+            print(':: The session will be stored in ' + self.state['path_session'])
+        else:
+            print(':: This session has no footprints. Use without `--dry-run` to store results.')
 
     def initLogger(self):
         """
         This function sets the logger level and file.
         """
-        logger.set_logfile(self.state['file_report'])
+        if not self.dry_run:
+            logger.set_logfile(self.state['file_report'])
         logger.set_log_level(self.args["log_level"])
     
     def initVarlog(self):
-        monitor.set_output_file(self.state['file_varlog'])
+        if not self.dry_run:
+            monitor.set_output_file(self.state['file_varlog'])
     
     def initProlog(self):
-        profiler.set_output_file(self.state['file_prolog'])
+        if not self.dry_run:
+            profiler.set_output_file(self.state['file_prolog'])
     
     def initVisdom(self):
         """
@@ -180,13 +200,18 @@ class Session(object):
             visdom -port 8097 &
         """
         from digideep.utility.visdom_engine.Instance  import VisdomInstance
-        VisdomInstance(port=self.args["visdom_port"], log_to_filename=self.state["file_visdom"], replay=True)
+        if not self.dry_run:
+            VisdomInstance(port=self.args["visdom_port"], log_to_filename=self.state["file_visdom"], replay=True)
+        else:
+            VisdomInstance(port=self.args["visdom_port"])
 
     def createSaaM(self):
         """ SaaM = Session-as-a-Module
         This function will make the session act like a python module.
         The user can then simply import the module for inference.
         """
+        if self.dry_run:
+            return
         # Copy the all modules
         modules = set(self.args["save_modules"])
         # Add digideep per se to the saved modules.
@@ -218,8 +243,12 @@ class Session(object):
             sv.start()
 
     def dump_cpanel(self, cpanel):
+        if self.dry_run:
+            return
         dump_dict_as_json(self.state['file_cpanel'], cpanel)
     def dump_params(self, params):
+        if self.dry_run:
+            return
         dump_dict_as_yaml(self.state['file_params'], params)
     
     def set_device(self):
@@ -254,6 +283,9 @@ class Session(object):
         states = torch.load(filename, map_location=self.device)
         return states
     def load_runner(self):
+        # If loading from a checkpoint, we must check the existence
+        # of that path and whether that's a valid digideep session.
+        # Existence is checked but validity is not. How is that?
         try:
             filename = os.path.join(self.args["load_checkpoint"], "runner.pt")
             runner = pickle.load(open(filename,"rb"))
@@ -263,6 +295,8 @@ class Session(object):
         return runner
 
     def save_states(self, states, index):
+        if self.dry_run:
+            return
         import torch
         dirname = os.path.join(self.state['path_checkpoints'], "checkpoint-"+str(index))
         if not os.path.exists(dirname):
@@ -270,6 +304,8 @@ class Session(object):
         filename = os.path.join(dirname, "states.pt")
         torch.save(states, filename)
     def save_runner(self, runner, index):
+        if self.dry_run:
+            return
         dirname = os.path.join(self.state['path_checkpoints'], "checkpoint-"+str(index))
         if not os.path.exists(dirname):
             os.makedirs(dirname)
@@ -289,9 +325,10 @@ class Session(object):
         # A bunch of arguments can come here!
         # These arguments are not saved!
         parser = argparse.ArgumentParser()
-        ## Save/Load
+        ## Save/Load/Dry-run
         parser.add_argument('--load-checkpoint', metavar=('<path>'), default='', type=str, help="Load a checkpoint to resume training from that point.")
         parser.add_argument('--play', action="store_true", help="Will play the stored policy.")
+        parser.add_argument('--dry-run', action="store_true", help="If used no footprints will be stored on disc whatsoever.")
         ## Session
         parser.add_argument('--session-path', metavar=('<path>'), default='/tmp', type=str, help="The path to store the sessions. Default is in /tmp")
         parser.add_argument('--save-modules', metavar=('<path>'), default=[], nargs='+', type=str, help="The modules to be stored in the session.")
