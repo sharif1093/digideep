@@ -16,6 +16,7 @@ import six
 from .spec2space import spec2space
 from .viewer import Viewer
 
+# TODO: flatten_observation does not work with nested dictionaries.
 from dm_control.rl.control import flatten_observation
 # from dm_control.rl.control import FLAT_OBSERVATION_KEY
 from dm_control.rl.control import PhysicsError
