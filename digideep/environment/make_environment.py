@@ -131,13 +131,17 @@ class MakeEnvironment:
             ## Add monitoring wrappers (not optional).
             if not force_no_monitor:
                 log_dir = os.path.join(self.session["path_monitor"], str(rank))
-                env = Monitor(env, log_dir, **self.params["main_wrappers"]["Monitor"])
+                if not self.session.dry_run:
+                    env = Monitor(env, log_dir, **self.params["main_wrappers"]["Monitor"])
+                else:
+                    env = Monitor(env, "/tmp", **self.params["main_wrappers"]["Monitor"])
 
 
             ## Add a video recorder if mode == "eval".
-            if self.mode == "eval":
+            if self.mode == "eval" and not self.session.dry_run:
                 videos_dir = os.path.join(self.session["path_videos"], str(rank))
                 env = MonitorVideoRecorder(env, videos_dir, video_callable=lambda id:True)
+                
 
             ## Dummy Dict Action and Observation
             if not isinstance(env.action_space, spaces.Dict):
