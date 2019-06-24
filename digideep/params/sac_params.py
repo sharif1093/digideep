@@ -127,12 +127,12 @@ def gen_params(cpanel):
 
     vect_wrappers.append(dict(name="digideep.environment.wrappers.normalizers.VecNormalizeObsDict",
                               args={"paths":[cpanel["observation_key"]],
-                                    "clip":5, # 10
+                                    "clip":10,
                                     "epsilon":1e-8
                               },
                               enabled=False))
     vect_wrappers.append(dict(name="digideep.environment.wrappers.normalizers.VecNormalizeRew",
-                              args={"clip":5, # 10
+                              args={"clip":10,
                                     "gamma":cpanel["gamma"],
                                     "epsilon":1e-8
                               },
