@@ -192,11 +192,11 @@ def gen_params(cpanel):
     params["agents"]["agent"]["methodargs"]["z_lambda"] = cpanel["z_lambda"]
 
     ################
-    
-    params["agents"]["agent"]["sampler"] = {}
-    params["agents"]["agent"]["sampler"]["agent_name"] = params["agents"]["agent"]["name"]
-    params["agents"]["agent"]["sampler"]["batch_size"] = cpanel["batch_size"]
-    params["agents"]["agent"]["sampler"]["observation_path"] = params["agents"]["agent"]["observation_path"]
+    params["agents"]["agent"]["sampler_list"] = ["digideep.agent.samplers.ddpg.sampler_re"]
+    params["agents"]["agent"]["sampler_args"] = {"agent_name": params["agents"]["agent"]["name"],
+                                                 "batch_size": cpanel["batch_size"],
+                                                 "observation_path": params["agents"]["agent"]["observation_path"]
+                                                }
 
     # # It deletes the last element from the chunk
     # params["agents"]["agent"]["sampler"]["truncate_datalists"] = {"n":1} # MUST be 1 to truncate last item: (T+1 --> T)

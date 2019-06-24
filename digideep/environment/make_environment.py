@@ -4,6 +4,7 @@ This module is inspired by `pytorch-a2c-ppo-acktr <https://github.com/ikostrikov
 
 import numpy as np
 import os
+from collections import OrderedDict
 
 from digideep.utility.toolbox import get_module, get_class
 from digideep.utility.logging import logger
@@ -62,7 +63,7 @@ def space2config(S):
         lim = (S.low.tolist(), S.high.tolist())
         config = {"typ":typ, "dim":dim, "lim":lim}
     elif isinstance(S, spaces.Dict):
-        config = {}
+        config = OrderedDict()
         for k in S.spaces:
             config[k] = space2config(S.spaces[k])
     else:

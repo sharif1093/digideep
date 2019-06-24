@@ -11,8 +11,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
 
-from digideep.agent.samplers.ddpg import sampler_re
-# # from digideep.agent.samplers.common import check_shape
+# from digideep.agent.samplers.ddpg import sampler_re
+from digideep.agent.samplers.common import Compose
 
 from digideep.utility.toolbox import get_class
 from digideep.utility.logging import logger
@@ -74,6 +74,9 @@ class SAC(AgentBase):
         self.criterion["value"] = nn.MSELoss()
         self.criterion["softq"] = nn.MSELoss()
         
+        # Build the sampler from sampler list:
+        sampler_list = [get_class(k) for k in self.params["sampler_list"]]
+        self.sampler = Compose(sampler_list)
 
         # noiseclass = get_class(self.params["noisename"])
         # self.noise = noiseclass(**self.params["noiseargs"])
@@ -128,8 +131,8 @@ class SAC(AgentBase):
         and the last key is added by the sampler.
         """
         with KeepTime("/update/step/sampler"):
-            info = deepcopy(self.params["sampler"])
-            batch = sampler_re(data=self.memory, info=info)
+            info = deepcopy(self.params["sampler_args"])
+            batch = self.sampler(data=self.memory, info=info)
             if batch is None:
                 return
 
