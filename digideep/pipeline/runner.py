@@ -86,10 +86,18 @@ class Runner:
         
         ## Instantiate Explorers
         # All explorers: train/test/eval
+        explorer_list = list(self.params["explorer"].keys())
+
+        assert "train" in explorer_list, "'train' mode explorer is not defined in the explorer parameters."
+        assert "test"  in explorer_list, "'test' mode explorer is not defined in the explorer parameters."
+        assert "eval"  in explorer_list, "'eval' mode explorer is not defined in the explorer parameters."
         self.explorer = {}
-        self.explorer["train"] = Explorer(self.session, agents=self.agents, **self.params["explorer"]["train"])
-        self.explorer["test"]  = Explorer(self.session, agents=self.agents, **self.params["explorer"]["test"])
+        explorer_list.remove("eval")
+        for e in explorer_list:
+            self.explorer[e] = Explorer(self.session, agents=self.agents, **self.params["explorer"][e])
+        # "eval" must be created as the last explorer to avoid GLFW connection to X11 issues.
         self.explorer["eval"]  = Explorer(self.session, agents=self.agents, **self.params["explorer"]["eval"])
+        
 
     ###############################################################
     ### SERIALIZATION ###

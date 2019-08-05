@@ -67,6 +67,8 @@ class Explorer:
         menv = MakeEnvironment(session, mode=self.params["mode"], seed=self.params["seed"], **self.params["env"])
         self.envs = menv.create_envs(num_workers=self.params["num_workers"], extra_env_kwargs=extra_env_kwargs)
         
+        # self.params["env"]["env_type"]
+        
         self.state = {}
         self.state["steps"] = 0
         self.state["n_episode"] = 0
@@ -83,10 +85,11 @@ class Explorer:
     def load_state_dict(self, state_dict):
         self.state.update(state_dict["state"])
         self.envs.load_state_dict(state_dict["envs"])
-        if not self.params["mode"]=="train":
-            # We reset the explorer in case of test/eval to clear the history of observations/masks/hidden_state.
-            # Because this part does not make sense to be transferred.
-            self.reset()
+        
+        # if self.params["mode"] in ["test", "eval"]:
+        #     # We reset the explorer in case of test/eval to clear the history of observations/masks/hidden_state.
+        #     # Because this part does not make sense to be transferred.
+        #     self.reset()
 
     def report_rewards(self, infos):
         """This function will extract episode information from infos and will send them to
@@ -100,6 +103,7 @@ class Explorer:
                     self.state["n_episode"] += 1
                     if self.params["mode"] == "train":
                         monitor.set_meta_key("episode", self.state["n_episode"])
+                    # TODO: Add window size to explorer's param list.
                     monitor("/reward/"+self.params["mode"]+"/episodic", rew, window=self.params["win_size"])
         #     print("Everything is here:", episode)
         #     # for e in 
