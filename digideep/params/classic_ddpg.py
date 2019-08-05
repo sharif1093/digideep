@@ -154,6 +154,7 @@ def gen_params(cpanel):
     # Runner: [episode < cycle < epoch] #
     #####################################
     params["runner"] = {}
+    params["runner"]["name"] = cpanel.get("runner_name", "digideep.pipeline.Runner")
     params["runner"]["n_cycles"] = cpanel["epoch_size"]    # Meaning that 100 cycles are 1 epoch.
     params["runner"]["n_epochs"] = cpanel["number_epochs"] # Testing and savings are done after each epoch.
     params["runner"]["randargs"] = {'seed':cpanel["seed"], 'cuda_deterministic':cpanel["cuda_deterministic"]}
@@ -233,10 +234,11 @@ def gen_params(cpanel):
     ##############
     params["memory"] = {}
 
+    params["memory"]["train"] = {}
     # Number of samples in a chunk
-    params["memory"]["chunk_sample_len"] = cpanel["n_steps"] # params["env"]["config"]["max_episode_steps"]
+    params["memory"]["train"]["chunk_sample_len"] = cpanel["n_steps"] # params["env"]["config"]["max_episode_steps"]
     # Number of chunks in the buffer:
-    params["memory"]["buffer_chunk_len"] = cpanel["memory_size_in_chunks"]
+    params["memory"]["train"]["buffer_chunk_len"] = cpanel["memory_size_in_chunks"]
     ##############################################
 
     
@@ -254,6 +256,7 @@ def gen_params(cpanel):
     params["explorer"]["train"]["num_workers"] = cpanel["num_workers"]
     params["explorer"]["train"]["deterministic"] = False # MUST: Takes random actions
     params["explorer"]["train"]["n_steps"] = cpanel["n_steps"] # Number of steps to take a step in the environment
+    params["explorer"]["train"]["win_size"] = 10 # Number of episodes to episode reward for report
     params["explorer"]["train"]["render"] = False
     params["explorer"]["train"]["render_delay"] = 0
     params["explorer"]["train"]["seed"] = cpanel["seed"] # + 3500
@@ -267,6 +270,7 @@ def gen_params(cpanel):
     params["explorer"]["test"]["num_workers"] = cpanel["num_workers"] # We can use the same amount of workers for testing!
     params["explorer"]["test"]["deterministic"] = True   # MUST: Takes the best action
     params["explorer"]["test"]["n_steps"] = params["env"]["config"]["max_episode_steps"] # Execute a full episode until the maximum allowed steps.
+    params["explorer"]["test"]["win_size"] = 2
     params["explorer"]["test"]["render"] = False
     params["explorer"]["test"]["render_delay"] = 0
     params["explorer"]["test"]["seed"] = cpanel["seed"] + 100 # We want to make the seed of test environments different from training.
@@ -280,6 +284,7 @@ def gen_params(cpanel):
     params["explorer"]["eval"]["num_workers"] = 1
     params["explorer"]["eval"]["deterministic"] = True   # MUST: Takes the best action
     params["explorer"]["eval"]["n_steps"] = params["env"]["config"]["max_episode_steps"] # Execute a full episode until the maximum allowed steps.
+    params["explorer"]["eval"]["win_size"] = -1
     params["explorer"]["eval"]["render"] = True
     params["explorer"]["eval"]["render_delay"] = 0
     params["explorer"]["eval"]["seed"] = cpanel["seed"] + 101 # We want to make the seed of eval environment different from test/train.
