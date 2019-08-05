@@ -108,12 +108,13 @@ class Runner:
         for agent_name in self.agents:
             agents_state[agent_name] = self.agents[agent_name].state_dict()
         
-        # explorer_state = {}
-        # for explorer_name in self.explorer:
-        #     explorer_state[explorer_name] = self.explorer[explorer_name].state_dict()
-        ## Only the state of explorer["train"] is important for us.
-        explorer_state = self.explorer["train"].state_dict()
-        memory_state = self.memory.state_dict()
+        ## The state of explorer["test"] and explorer["eval"] is not important for us.
+        explorer_state = {}
+        for explorer_name in self.explorer:
+            if explorer_name in ["test", "eval"]:
+                continue
+            explorer_state[explorer_name] = self.explorer[explorer_name].state_dict()
+
         return {'agents':agents_state, 'explorer':explorer_state, 'memory':memory_state}
     def load_state_dict(self, state_dict):
         """
@@ -128,12 +129,20 @@ class Runner:
             self.agents[agent_name].load_state_dict(agents_state[agent_name])
         
         explorer_state = state_dict['explorer']
-        # for explorer_name in explorer_state:
-        #     self.explorer[explorer_name].load_state_dict(explorer_state[explorer_name])
-        self.explorer["train"].load_state_dict(explorer_state)
-        # We do intentionally update the state of test/eval explorers with the state of train.
-        self.explorer["test"].load_state_dict(explorer_state)
-        self.explorer["eval"].load_state_dict(explorer_state)
+        for explorer_name in explorer_state:
+            self.explorer[explorer_name].load_state_dict(explorer_state[explorer_name])
+
+        memory_state = state_dict['memory']
+        for memory_name in memory_state:
+            self.memory[memory_name].load_state_dict(memory_state[memory_name])
+
+        # We do intentionally update the state of test/eval explorers with the state of "train" explorer.
+        # We are only interested in states of the reward/observation normalizers.
+        self.explorer["test"].load_state_dict(self.explorer["train"].state_dict())
+        self.explorer["eval"].load_state_dict(self.explorer["train"].state_dict())
+        
+        self.explorer["test"].reset()
+        self.explorer["eval"].reset()
     
     ###
     def override(self):

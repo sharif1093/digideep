@@ -229,4 +229,12 @@ class DmControlWrapper(Env, EzPickle):
         # self._viewers = {}
         pass
 
+    def get_env_state(self):
+        # print("GET_env_state is called inside the dmcontrol")
+        return self.dmcenv.physics.get_state()
+    def set_env_state(self, state):
+        # print("SET_env_state is called inside the dmcontrol")
+        self.dmcenv.physics.set_state(state)
+        
+
 

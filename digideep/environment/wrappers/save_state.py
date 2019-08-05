@@ -50,5 +50,5 @@ class VecSaveState(VecEnvWrapper):
         while hasattr(venv, "venv"):
             venv = venv.venv
             name = get_type_name(venv)
-            if hasattr(venv, "load_state_dict"):
+            if hasattr(venv, "load_state_dict") and name in state_dict:
                 venv.load_state_dict(state_dict[name])

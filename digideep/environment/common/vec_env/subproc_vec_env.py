@@ -51,8 +51,16 @@ def worker(remote, parent_remote, env_fn_wrapper):
                 remote.send(env.spec)
             elif cmd == 'get_type':
                 remote.send(env.unwrapped.__module__)
+            elif cmd == 'get_env_state':
+                if hasattr(env.unwrapped, "get_env_state"):
+                    # print("We really got the env state!")
+                    remote.send(env.unwrapped.get_env_state())
                 else:
                     remote.send(None)
+            elif cmd == 'set_env_state':
+                if hasattr(env.unwrapped, "set_env_state"):
+                    # print("We really set the env state!")
+                    remote.send(env.unwrapped.set_env_state(data))
                 else:
                     remote.send(None)
             else:
@@ -158,3 +166,20 @@ class SubprocVecEnv(VecEnv):
 
     def _assert_not_closed(self):
         assert not self.closed, "Trying to operate on a SubprocVecEnv after calling close()"
+    
+    def state_dict(self):
+        # print("venv state_dict called")
+
+        for remote in self.remotes:
+            remote.send(('get_env_state', None))
+        states = [remote.recv() for remote in self.remotes]
+        return states
+        
+    def load_state_dict(self, state_dicts):
+        # print("venv load_state_dict called")
+
+        for remote, state_dict in zip(self.remotes, state_dicts):
+            remote.send(('set_env_state', state_dict))
+        
+        results = [remote.recv() for remote in self.remotes]
+        return results
