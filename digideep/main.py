@@ -2,9 +2,9 @@ def main():
     import os, sys
     import yaml, json
 
-    from digideep.pipeline import Session, Runner
+    from digideep.pipeline import Session
     from digideep.utility.logging import logger
-    from digideep.utility.toolbox import get_module, strict_update
+    from digideep.utility.toolbox import get_class, get_module, strict_update
 
     session = Session(root_path=os.path.dirname(os.path.realpath(__file__)))
 
@@ -34,6 +34,8 @@ def main():
         session.dump_cpanel(cpanel)
         session.dump_params(params)
         ##########################################
+        
+        Runner = get_class(params["runner"]["name"])
         runner = Runner(params)
     
     # 2. Initializing: It will load_state_dicts if we are in loading mode
