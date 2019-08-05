@@ -2,8 +2,8 @@ from collections import OrderedDict as odict
 import time
 import numpy as np
 from .json_encoder import JsonEncoder
+import os
 
-SHOULD_PROFILE = True
 
 class Profiler:
     """This class provides a very simple yet light implementation of function profiling.
@@ -78,7 +78,7 @@ class Profiler:
         for k in self.get_keys():
             res += (">> {:s} [{:d}x, {:.1f}s]\n".format(k, self.get_occurence(k), self.get_time_overall(k)))
         return res
-    
+
     def set_output_file(self, path):
         self.filename = path
     def dump(self, meta = {}):
@@ -91,15 +91,46 @@ class Profiler:
 
 # Global profiler object (use KeepTime to interact with this object):
 profiler = Profiler()
-
 class KeepTime(object):
+    ##################
+    # Static Methods #
+    ##################
+    _stack = []
+    _level = -1
+    def set_level(level):
+        KeepTime._level = level
+    def get_level():
+        return KeepTime._level
+    def get_full_path():
+        return os.path.join(*KeepTime._stack)
+    def get_current_level():
+        path = KeepTime.get_full_path()
+        if path == "/":
+            return 0
+        return path.count("/")
+    def add_name(name):
+        KeepTime._stack.append(name)
+    def pop_name():
+        KeepTime._stack.pop()
+
+    ######################
+    # Non-static Methods #
+    ######################
     def __init__(self, name):
         self.name = name
+        self.enabled = False
+
     def __enter__(self):
-        if SHOULD_PROFILE or self.name=="/":
-            profiler.start(self.name)
+        KeepTime.add_name(self.name)
+        if (KeepTime.get_current_level() <= KeepTime.get_level()) or (KeepTime.get_level() == -1):
+            name = KeepTime.get_full_path()
+            profiler.start(name)
+            self.enabled = True
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if SHOULD_PROFILE or self.name=="/":
-            profiler.lapse(self.name)
+        name = KeepTime.get_full_path()
+        KeepTime.pop_name()
+        if self.enabled:
+            profiler.lapse(name)
+        

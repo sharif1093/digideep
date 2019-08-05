@@ -91,16 +91,16 @@ class PPO(AgentBase):
         observation_path = self.params.get("observation_path", "/agent")
         observations_ = observations[observation_path].astype(np.float32)
 
-        with KeepTime("/explore/step/prestep/gen_action/to_torch"):
+        with KeepTime("to_torch"):
             observations_ = torch.from_numpy(observations_).to(self.device)
             hidden_state_ = torch.from_numpy(hidden_state).to(self.device)
             masks_ = torch.from_numpy(masks).to(self.device)
         
-        with KeepTime("/explore/step/prestep/gen_action/compute_func"):
+        with KeepTime("compute_func"):
             values, action, action_log_p, hidden_state_ = \
                 self.policy.generate_actions(observations_, hidden_state_, masks_, deterministic=deterministic)
         
-        with KeepTime("/explore/step/prestep/gen_action/to_numpy"):
+        with KeepTime("to_numpy"):
             artifacts = dict(values=values.cpu().data.numpy(),
                              action_log_p=action_log_p.cpu().data.numpy())
             
@@ -129,16 +129,16 @@ class PPO(AgentBase):
         :class:`~digideep.environment.explorer.Explorer`.
 
         """
-        with KeepTime("/update/step/samples"):
+        with KeepTime("samples"):
             info = deepcopy(self.params["sampler"])
             if self.policy.is_recurrent:
                 data_sampler = sampler_rn(data=self.memory, info=info)
             else:
                 data_sampler = sampler_ff(data=self.memory, info=info)
 
-        with KeepTime("/update/step/batches"):
+        with KeepTime("batches"):
             for batch in data_sampler:
-                with KeepTime("/update/step/batches/to_torch"):
+                with KeepTime("to_torch"):
                     # Environment
                     observations = torch.from_numpy(batch["/observations"+self.params["observation_path"]]).to(self.device)
                     masks = torch.from_numpy(batch["/masks"]).to(self.device)
@@ -151,14 +151,14 @@ class PPO(AgentBase):
                     advantages = torch.from_numpy(batch["/agents/"+self.params["name"]+"/artifacts/advantages"]).to(self.device)
                     returns = torch.from_numpy(batch["/agents/"+self.params["name"]+"/artifacts/returns"]).to(self.device)
 
-                with KeepTime("/update/step/batches/eval_action"):
+                with KeepTime("eval_action"):
                     values, action_log_p, dist_entropy, _ = \
                         self.policy.evaluate_actions(observations,
                                                         hidden_state,
                                                         masks,
                                                         actions)
 
-                with KeepTime("/update/step/batches/loss_function"):
+                with KeepTime("loss_function"):
                     # This ratio is the quotient of old/new policy "density" at the state s.
                     ratio = torch.exp(action_log_p - old_action_log_p)
                     surr1 = ratio * advantages
@@ -180,13 +180,13 @@ class PPO(AgentBase):
                         + action_loss \
                         - dist_entropy * self.params["methodargs"]["entropy_coef"]
                 
-                with KeepTime("/update/step/batches/backprop"):
+                with KeepTime("backprop"):
                     self.optimizer.zero_grad()
                     Loss.backward()
                     nn.utils.clip_grad_norm_(self.policy.model.parameters(),
                                             self.params["methodargs"]["max_grad_norm"])
                 
-                with KeepTime("/update/step/batches/optimstep"):
+                with KeepTime("optimstep"):
                     self.optimizer.step()
 
                 # Monitoring values

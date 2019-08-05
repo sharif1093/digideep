@@ -5,7 +5,7 @@ from digideep.utility.logging import logger
 from digideep.utility.toolbox import dump_dict_as_json, dump_dict_as_yaml, get_module
 from digideep.utility.json_encoder import JsonDecoder
 from digideep.utility.monitoring import monitor
-from digideep.utility.profiling import profiler
+from digideep.utility.profiling import profiler, KeepTime
 from digideep.utility.name_generator import get_random_name
 
 import pickle, torch
@@ -189,6 +189,7 @@ class Session(object):
     def initProlog(self):
         if not self.dry_run:
             profiler.set_output_file(self.state['file_prolog'])
+        KeepTime.set_level(self.args["profiler_level"])
     
     def initVisdom(self):
         """
@@ -333,6 +334,7 @@ class Session(object):
         parser.add_argument('--session-path', metavar=('<path>'), default='/tmp', type=str, help="The path to store the sessions. Default is in /tmp")
         parser.add_argument('--save-modules', metavar=('<path>'), default=[], nargs='+', type=str, help="The modules to be stored in the session.")
         parser.add_argument('--log-level', metavar=('<n>'), default=1, type=int, help="The logging level: 0 (debug and above), 1 (info and above), 2 (warn and above), 3 (error and above), 4 (fatal and above)")
+        parser.add_argument('--profiler-level', metavar=('<n>'), default=1, type=int, help="Profiler level. '-1' profiles all level. Default: '1'")
         ## Visdom Server
         parser.add_argument('--visdom', action='store_true', help="Whether to use visdom or not!")
         parser.add_argument('--visdom-port', metavar=('<n>'), default=8097, type=int, help="The port of visdom server, it's on 8097 by default.")

@@ -213,14 +213,15 @@ class Runner:
                 while self.state["i_cycle"] < self.params["runner"]["n_cycles"]:
                     with KeepTime("/"):
                         # 1. Do Experiment
-                        with KeepTime("/explore"):
+                        with KeepTime("train"):
                             chunk = self.explorer["train"].update()
                         # 2. Store Result
-                        with KeepTime("/store"):
+                        with KeepTime("store"):
                             self.memory.store(chunk)
                         # 3. Update Agent
+                        with KeepTime("update"):
                         for agent_name in self.agents:
-                            with KeepTime("/update/"+agent_name):
+                                with KeepTime(agent_name):
                                 self.agents[agent_name].update()
                     self.state["i_cycle"] += 1
                 # End of Cycle
@@ -262,7 +263,7 @@ class Runner:
                 while self.state["i_cycle"] < self.params["runner"]["n_cycles"]:
                     with KeepTime("/"):
                         # 1. Do Experiment
-                        with KeepTime("/explore"):
+                        with KeepTime("eval"):
                             self.explorer["eval"].update()
                     self.log()
                     self.state["i_cycle"] += 1

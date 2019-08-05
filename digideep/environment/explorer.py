@@ -145,7 +145,7 @@ class Explorer:
             ``{"observations":..., "masks":..., "agents":...}``
         """
 
-        with KeepTime("/explore/step/prestep/to_numpy"):
+        with KeepTime("to_numpy"):
             # TODO: Is it necessary for conversion of obs?
             # NOTE: The np conversion will not work if observation is a dictionary.
             # observations = np.array(self.state["observations"], dtype=np.float32)
@@ -153,7 +153,7 @@ class Explorer:
             masks = self.state["masks"]
             hidden_state = self.state["hidden_state"]
 
-        with KeepTime("/explore/step/prestep/gen_action"):
+        with KeepTime("gen_action"):
             publish_agents = True 
             agents = {}
             for agent_name in self.agents:
@@ -164,7 +164,7 @@ class Explorer:
                     publish_agents = False
                 # We are saving the "new" hidden_state now.
             
-        with KeepTime("/explore/step/prestep/form_dictionary"):
+        with KeepTime("form_dictionary"):
             if publish_agents:
                 pre_transition = dict(observations=observations,
                                       masks=masks,
@@ -189,7 +189,7 @@ class Explorer:
         """
 
         # We are saving old versions of observations, hidden_state, and masks.
-        with KeepTime("/explore/step/prestep"):
+        with KeepTime("prestep"):
             pre_transition = self.prestep()
             
         # TODO: For true multi-agent systems, rewards must be a dictionary as well,
@@ -199,7 +199,7 @@ class Explorer:
         # Updating observations and masks: These two are one step old in the trajectory.
         # hidden_state is the newest.
         
-        with KeepTime("/explore/step/envstep"):
+        with KeepTime("envstep"):
             # Prepare actions
             actions = extract_keywise(pre_transition["agents"], "actions")
 
@@ -210,10 +210,9 @@ class Explorer:
             self.state["masks"] = np.array([0.0 if done_ else 1.0 for done_ in dones], dtype=np.float32).reshape((-1,1))
 
         # TODO: Adapt with the new dict_of_lists data structure.
-        with KeepTime("/explore/step/report_reward"):
             self.report_rewards(infos)
 
-        with KeepTime("/explore/step/render"):
+        with KeepTime("render"):
             if self.params["render"]:
                 self.envs.render()
                 if self.params["render_delay"] > 0:
@@ -224,7 +223,7 @@ class Explorer:
         #     ## Retry??
         #     # return self.run()
         
-        with KeepTime("/explore/step/poststep"):
+        with KeepTime("poststep"):
             # TODO: Sometimes the type of observations is "dict" which shouldn't be. Investigate the reason.
             if isinstance(self.state["observations"], OrderedDict) or isinstance(self.state["observations"], dict):
                 for key in self.state["observations"]:
@@ -240,6 +239,7 @@ class Explorer:
 
             self.state["steps"] += 1
             self.state["timesteps"] += self.params["num_workers"]
+            with KeepTime("report_reward"):
 
             transition = dict(**pre_transition,
                               rewards=rewards,
@@ -269,7 +269,7 @@ class Explorer:
 
         # Run T (n-step) steps.
         for t in range(self.params["n_steps"]):
-            with KeepTime("/explore/step"):
+            with KeepTime("step"):
                 # print("one exploration step ...")
                 transition = self.step()
                 
@@ -279,14 +279,14 @@ class Explorer:
                 # else:
                 #     exit()
 
-            with KeepTime("/explore/append"):
+            with KeepTime("append"):
                 # Data is flattened in the explorer per se.
                 transition = flatten_dict(transition)
                 # Update the trajectory with the current list of data.
                 # Put nones if the key is absent.
                 update_dict_of_lists(trajectory, transition, index=t)
 
-        with KeepTime("/explore/poststep"):
+        with KeepTime("poststep"):
             # Take one prestep so we have the next observation/hidden_state/masks/action/value/ ...
             transition = self.prestep(final_step=True)
             transition = flatten_dict(transition)
