@@ -1,8 +1,9 @@
 import numpy as np
 import warnings
 
-from .common import Compose, get_memory_params, check_nan, check_shape, check_stats, print_line
+from .common import Compose, flatten_memory_to_train_key, get_memory_params, check_nan, check_shape, check_stats, print_line
 from .common import flatten_first_two
+from digideep.utility.logging import logger
 
 def get_sample_memory(buffer, info):
     """Sampler function for DDPG-like algorithms where we want to sample data from an experience replay buffer.
@@ -32,7 +33,7 @@ def get_sample_memory(buffer, info):
     
     if batch_size >= len(valid_arr):
         # We don't have enough data in the memory yet.
-        warnings.warn("batch_size ({}) should be smaller than total number of records (~ {}={}x{}).".format(batch_size, num_workers*N, num_workers, N))
+        logger.debug("batch_size ({}) should be smaller than total number of records (~ {}={}x{}).".format(batch_size, num_workers*N, num_workers, N))
         return None
 
     # Sampling with replacement:
@@ -61,10 +62,11 @@ def get_sample_memory(buffer, info):
 #############################
 
 # Sampler with replay buffer
-sampler_re = Compose([get_memory_params,  # Must be present: It gets the memory parameters and passes them to the rest of functions through "info".
+sampler_re = Compose([flatten_memory_to_train_key, # Must be present: It flattens the memory dict to the "train" key.
+                      get_memory_params,  # Must be present: It gets the memory parameters and passes them to the rest of functions through "info".
                       get_sample_memory,  # Sample
-                      # check_nan,        # It complains about existing NaNs in the chunk.
                       # check_shape,      # It prints the shapes of the existing keys in the chunk.
+                      # check_nan,        # It complains about existing NaNs in the chunk.
                       # check_stats,
                       # print_line,       # This only prints a line for more beautiful debugging.
                      ])

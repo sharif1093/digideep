@@ -55,7 +55,9 @@ class VecNormalizeObsDict(VecEnvWrapper):
     def __init__(self, venv, mode, paths, clip=10., epsilon=1e-8):
         VecEnvWrapper.__init__(self, venv)
 
-        self.training = True if mode == "train" else False
+        # self.training = True if mode == "train" else False
+        self.training = False if mode in ["test", "eval"] else True
+
         self.paths = paths
         # Check all entries
         for path in self.paths:

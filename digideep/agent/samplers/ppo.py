@@ -4,7 +4,7 @@ from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
 from digideep.utility.logging import logger
 
 
-from .common import Compose, get_memory_params, check_nan, check_shape, check_stats, print_line
+from .common import Compose, flatten_memory_to_train_key, get_memory_params, check_nan, check_shape, check_stats, print_line
 from .common import truncate_datalists, flatten_first_two
 
 
@@ -147,7 +147,8 @@ def compute_advantages(chunk, info):
 ### Composing the sampler ###
 #############################
 # NOTE: The order is IMPORTANT!
-preprocess = Compose([get_memory_params,  # Must be present: It gets the memory parameters and passes them to the rest of functions through "info".
+preprocess = Compose([flatten_memory_to_train_key, # Must be present: It flattens the memory dict to the "train" key.
+                      get_memory_params,  # Must be present: It gets the memory parameters and passes them to the rest of functions through "info".
                       get_last_chunk,     # Must be present: It gets the last chunk in the memory, which is useful for PPO, A2C, etc.
                       compute_advantages, # Must be present: It computes the advantage function based on the other values.
                       truncate_datalists, # Must be present: It truncates the last entry, i.e. time t+1 which was used to produce other values

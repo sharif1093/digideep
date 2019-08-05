@@ -73,7 +73,9 @@ class Runner:
         This function will instantiate the memory, the explorers, and the agents with their specific parameters.
         """
         ## Instantiate Memory
-        self.memory = Memory(self.session, **self.params["memory"])
+        self.memory = {}
+        for m in self.params["memory"]:
+            self.memory[m] = Memory(self.session, **self.params["memory"][m])
         
         ## Instantiate Agents
         self.agents = {}
@@ -115,6 +117,10 @@ class Runner:
                 continue
             explorer_state[explorer_name] = self.explorer[explorer_name].state_dict()
 
+        memory_state = {}
+        for memory_name in self.memory:
+            memory_state[memory_name] = self.memory[memory_name].state_dict()
+        
         return {'agents':agents_state, 'explorer':explorer_state, 'memory':memory_state}
     def load_state_dict(self, state_dict):
         """
@@ -231,30 +237,40 @@ class Runner:
                             chunk = self.explorer["train"].update()
                         # 2. Store Result
                         with KeepTime("store"):
-                            self.memory.store(chunk)
+                            self.memory["train"].store(chunk)
                         # 3. Update Agent
                         with KeepTime("update"):
-                        for agent_name in self.agents:
+                            for agent_name in self.agents:
                                 with KeepTime(agent_name):
-                                self.agents[agent_name].update()
+                                    self.agents[agent_name].update()
                     self.state["i_cycle"] += 1
                 # End of Cycle
 
                 self._inc_epoch()
                 # NOTE: We may save/test after each cycle or at intervals.
-
-                # 1. Log
-                self.log()
-                # 2. Perform the test
+                
+                # 1. Perform the test
                 self.test()
-                # 3. Save
+                # 2. Save
                 self.save()
+                # 3. Log
+                self.log()
                 gc.collect() # Garbage Collection
 
         except (KeyboardInterrupt, SystemExit):
             logger.fatal('Operation stopped by the user ...')
         finally:
             logger.fatal('End of operation ...')
+
+    def test(self):
+        # Make the states of the two explorers train/test exactly the same, for the states of the environments.
+        if self.params["runner"]["test_act"]:
+            if self.state["i_epoch"] % self.params["runner"]["test_int"] == 0:
+                with KeepTime("/"):
+                    with KeepTime("test"):
+                        self.explorer["test"].load_state_dict(self.explorer["train"].state_dict())
+                        self.explorer["test"].reset()
+                        self.explorer["test"].update()
 
 
     def enjoy(self): #i.e. eval
@@ -286,14 +302,6 @@ class Runner:
             logger.fatal('Operation stopped by the user ...')
         finally:
             logger.fatal('End of operation ...')
-
-    def test(self):
-        # Make the states of the two explorers train/test exactly the same, for the states of the environments.
-        if self.params["runner"]["test_act"]:
-            if self.state["i_epoch"] % self.params["runner"]["test_int"] == 0:
-                self.explorer["test"].load_state_dict(self.explorer["train"].state_dict())
-                self.explorer["test"].reset()
-                self.explorer["test"].update()
 
     #####################
     ## Logging Summary ##

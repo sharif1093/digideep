@@ -47,6 +47,9 @@ class Compose:
 ##################################
 ##           SAMPLER            ##
 ##################################
+def flatten_memory_to_train_key(memory, info):
+    return memory["train"]
+
 def get_memory_params(memory, info):
     """A sampler function to get memory parameters and store them in the ``info`` for the future samplers.
 
