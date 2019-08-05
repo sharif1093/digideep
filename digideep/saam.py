@@ -61,11 +61,12 @@ class Loader:
     def getPrologLoader(self):
         return LogLoader(self._getPrologPath)
     
-    @property
-    def _getStalogPath(self):
-        return os.path.join(self.root_path, "stalog.json")
-    def getStalogLoader(self):
-        return LogLoader(self._getStalogPath)
+    # NOTE: What is this used for?
+    # @property
+    # def _getStalogPath(self):
+    #     return os.path.join(self.root_path, "stalog.json")
+    # def getStalogLoader(self):
+    #     return LogLoader(self._getStalogPath)
 
     # def getEnv(self):
     #    To get an environment created with MakeEnvironment.
@@ -103,13 +104,13 @@ class LogLoader:
             if key in self.data:
                 for m in entry["meta"]:
                     self.data[key][m] += [entry["meta"][m]]
-                for d in entry["data"][key]:
+                for d in entry["data"][key]: # Iterate over num, sum, std, min, max
                     self.data[key][d] += [entry["data"][key][d]]
             else:
                 self.data[key] = {}
                 for m in entry["meta"]:
                     self.data[key][m] = [entry["meta"][m]]
-                for d in entry["data"][key]:
+                for d in entry["data"][key]: # Iterate over num, sum, std, min, max
                     self.data[key][d] = [entry["data"][key][d]]
     
     def _convert_to_numpy(self):
