@@ -124,7 +124,10 @@ class Session(object):
 
         # 2. Create a unique 'path_session':
         if not self.dry_run:
-            self.state['path_session'] = make_unique_path_session(self.state['path_base_sessions'], prefix="session_")
+            if self.args["session_name"]:
+                self.state['path_session'] = os.path.join(self.state['path_base_sessions'], self.args["session_name"])
+            else:
+                self.state['path_session'] = make_unique_path_session(self.state['path_base_sessions'], prefix="session_")
         else:
             self.state['path_session'] = os.path.join(self.state['path_base_sessions'], "no_session")
 
@@ -332,6 +335,7 @@ class Session(object):
         parser.add_argument('--dry-run', action="store_true", help="If used no footprints will be stored on disc whatsoever.")
         ## Session
         parser.add_argument('--session-path', metavar=('<path>'), default='/tmp', type=str, help="The path to store the sessions. Default is in /tmp")
+        parser.add_argument('--session-name', metavar=('<name>'), default='',     type=str, help="A default name for the session. Random name if not provided.")
         parser.add_argument('--save-modules', metavar=('<path>'), default=[], nargs='+', type=str, help="The modules to be stored in the session.")
         parser.add_argument('--log-level', metavar=('<n>'), default=1, type=int, help="The logging level: 0 (debug and above), 1 (info and above), 2 (warn and above), 3 (error and above), 4 (fatal and above)")
         parser.add_argument('--profiler-level', metavar=('<n>'), default=1, type=int, help="Profiler level. '-1' profiles all level. Default: '1'")
