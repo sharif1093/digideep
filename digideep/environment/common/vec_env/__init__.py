@@ -62,11 +62,12 @@ class VecEnv(ABC):
         'render.modes': ['human', 'rgb_array']
     }
 
-    def __init__(self, num_envs, observation_space, action_space, spec):
+    def __init__(self, num_envs, observation_space, action_space, spec, env_type):
         self.num_envs = num_envs
         self.observation_space = observation_space
         self.action_space = action_space
         self.spec = spec
+        self.env_type = env_type
 
     @abstractmethod
     def reset(self):
@@ -167,13 +168,14 @@ class VecEnvWrapper(VecEnv):
     of environments at once.
     """
 
-    def __init__(self, venv, observation_space=None, action_space=None, spec=None):
+    def __init__(self, venv, observation_space=None, action_space=None, spec=None, env_type=None):
         self.venv = venv
         VecEnv.__init__(self,
                         num_envs=venv.num_envs,
                         observation_space=observation_space or venv.observation_space,
                         action_space=action_space or venv.action_space,
-                        spec=spec or venv.spec)
+                        spec=spec or venv.spec,
+                        env_type=env_type or venv.env_type)
 
     def step_async(self, actions):
         self.venv.step_async(actions)

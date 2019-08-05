@@ -49,6 +49,12 @@ def worker(remote, parent_remote, env_fn_wrapper):
                 remote.send((env.observation_space, env.action_space))
             elif cmd == 'get_specs':
                 remote.send(env.spec)
+            elif cmd == 'get_type':
+                remote.send(env.unwrapped.__module__)
+                else:
+                    remote.send(None)
+                else:
+                    remote.send(None)
             else:
                 raise NotImplementedError
     except KeyboardInterrupt:
@@ -90,7 +96,12 @@ class SubprocVecEnv(VecEnv):
         self.remotes[0].send(('get_specs', None))
         spec = self.remotes[0].recv()
 
-        VecEnv.__init__(self, len(env_fns), observation_space, action_space, spec)
+        # Get the type of the environment, which is the main class that has created the environment
+        self.remotes[0].send(('get_type', None))
+        env_type = self.remotes[0].recv()
+        
+
+        VecEnv.__init__(self, len(env_fns), observation_space, action_space, spec, env_type)
 
     def _delayed_init(self):
         """We get the spec later, because we know that some environments are late in creating their spec's.

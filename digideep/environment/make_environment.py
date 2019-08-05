@@ -113,14 +113,15 @@ class MakeEnvironment:
         if not params["name"] in registry.env_specs:
             logger.fatal("Environment '" + params["name"] + "' is not registered in the gym registry.")
             exit()
-        
+    
+
     def make_env(self, rank, force_no_monitor=False, extra_env_kwargs={}):
         import sys # For debugging
         def _f():
             # The header of gym.make(.): `def make(id, **kwargs)`
             env = gym.make(self.params["name"], **extra_env_kwargs)
             env.seed(self.seed + rank)
-            
+
             ## Atari environment wrappers
             is_atari = hasattr(gym.envs, 'atari') and isinstance(env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
             if is_atari:
@@ -173,7 +174,7 @@ class MakeEnvironment:
             envs = DummyVecEnv(envs)
         else:
             envs = SubprocVecEnv(envs)
-        
+
         ## Converting data structure of obs/rew/infos/actions:
         envs = VecObsRewInfoActWrapper(envs)
 
@@ -202,11 +203,13 @@ class MakeEnvironment:
         Note: Observation and action can be nested spaces.Dict.
         """
 
-        _f = self.make_env(rank=0, force_no_monitor=True)
+        # _f = self.make_env(rank=0, force_no_monitor=True)
+
         venv = self.create_envs(num_workers=1, force_no_monitor=True)
         venv.reset()
 
         config = {
+            'env_type':          venv.env_type,
             'action_space' :     space2config(venv.action_space),      # This is type of action space: Discrete, Box, ...
             'observation_space': space2config(venv.observation_space), # Observation space
             
