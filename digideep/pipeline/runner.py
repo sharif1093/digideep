@@ -32,14 +32,19 @@ class Runner:
         self.params = params
         self.state = {}
         self.state["i_frame"] = 0
-        self.state["i_rolls"] = 0
+        # self.state["i_rolls"] = 0
         self.state["i_cycle"] = 0
         self.state["i_epoch"] = 0
         self.state["loading"] = False
 
         profiler.reset()
         monitor.reset()
+        monitor.set_meta_key("epoch", self.state["i_epoch"])
 
+    def _inc_epoch(self):
+        self.state["i_epoch"] += 1
+        monitor.set_meta_key("epoch", self.state["i_epoch"])
+    
     def start(self, session):
         """A function to initialize the objects and load their states (if loading from a checkpoint).
         This function must be called before using the :func:`train` and :func:`enjoy` functions.
@@ -226,7 +231,7 @@ class Runner:
                     self.state["i_cycle"] += 1
                 # End of Cycle
 
-                self.state["i_epoch"] += 1
+                self._inc_epoch()
                 # NOTE: We may save/test after each cycle or at intervals.
 
                 # 1. Log
@@ -291,42 +296,43 @@ class Runner:
         * Variables sent to the :class:`~digideep.utility.monitoring.Monitor`.
         * Profiling information, i.e. registered timing information in the :class:`~digideep.utility.profiling.Profiler`.
         """
-
-        n_frame = self.params["explorer"]["train"]["num_workers"] * profiler.get_occurence("/explore/step")
-        n_rolls = monitor.get_num("/explore/reward/train")
-
-        self.state["i_frame"] += n_frame
-        self.state["i_rolls"] += n_rolls
-        # assert profiler.get_occurence("/explore/step") ==  self.params["explorer"]["train"]["n_steps"] * self.params["runner"]["n_cycles"]
-        ## elapsed = profiler.get_time_average("/")
+        
+        # monitor.get_meta_key("frame")
+        # monitor.get_meta_key("episode")
+        # monitor.get_meta_key("epoch")
+        
+        frame = monitor.get_meta_key("frame")
+        episode = monitor.get_meta_key("episode")
+        
+        n_frame = frame - self.state["i_frame"]
+        self.state["i_frame"] = frame
         elapsed = profiler.get_time_overall("/")
         overall = int(n_frame / elapsed)
         
         logger("---------------------------------------------------------")
-        logger("Frame={:4.1e} | Episodes={:4.1e} | Epoch({:3d}cy)={:4d} | Overall({:4.1e}F/{:4.1f}s)={:4d}Hz".format(
-                self.state["i_frame"],
-                self.state["i_rolls"],
-                self.params["runner"]["n_cycles"],
-                self.state["i_epoch"],
-                n_frame,
-                elapsed,
-                overall
+        logger("Frame={frame:4.1e} | Episodes={episode:4.1e} | Epoch({cycle:3d}cy)={epoch:4d} | Overall({n_frame:4.1e}F/{e_time:4.1f}s)={freq:4d}Hz".format(
+                frame=frame,
+                episode=episode,
+                cycle=self.params["runner"]["n_cycles"],
+                epoch=self.state["i_epoch"],
+                n_frame=n_frame,
+                e_time=elapsed,
+                freq=overall
                 )
               )
-        # Printing profiling information:
-        logger("PROFILING:\n"+str(profiler))
+        
         # Printing monitoring information:
         logger("MONITORING:\n"+str(monitor))
+        monitor.dump()
+        monitor.reset()
 
+        # Printing profiling information:
+        logger("PROFILING:\n"+str(profiler))
         meta = {"epoch":self.state["i_epoch"],
-                "frame":self.state["i_frame"],
-                "roll":self.state["i_rolls"]}
+                "frame":frame,
+                "episode":episode}
 
         profiler.dump(meta)
         profiler.reset()
-        monitor.dump(meta)
-        monitor.reset()
-
-        # TODO: We can check, and if self.session.args["visdom"] is true send results to visdom as well.
 
         print("")

@@ -98,7 +98,9 @@ class Explorer:
             for rew in rewards:
                 if not np.isnan(rew):
                     self.state["n_episode"] += 1
-                    monitor("/explore/reward/"+self.params["mode"], rew)
+                    if self.params["mode"] == "train":
+                        monitor.set_meta_key("episode", self.state["n_episode"])
+                    monitor("/reward/"+self.params["mode"]+"/episodic", rew, window=self.params["win_size"])
         #     print("Everything is here:", episode)
         #     # for e in 
         #     # self.state["n_episode"] += 1
@@ -209,8 +211,7 @@ class Explorer:
             self.state["hidden_state"] = extract_keywise(pre_transition["agents"], "hidden_state")
             self.state["masks"] = np.array([0.0 if done_ else 1.0 for done_ in dones], dtype=np.float32).reshape((-1,1))
 
-        # TODO: Adapt with the new dict_of_lists data structure.
-            self.report_rewards(infos)
+            monitor("/reward/"+self.params["mode"]+"/continuous", rewards)
 
         with KeepTime("render"):
             if self.params["render"]:
@@ -239,7 +240,11 @@ class Explorer:
 
             self.state["steps"] += 1
             self.state["timesteps"] += self.params["num_workers"]
+            if self.params["mode"] == "train":
+                monitor.set_meta_key("frame", self.state["timesteps"])
+            # TODO: Adapt with the new dict_of_lists data structure.
             with KeepTime("report_reward"):
+                self.report_rewards(infos)
 
             transition = dict(**pre_transition,
                               rewards=rewards,
