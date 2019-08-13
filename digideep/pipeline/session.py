@@ -339,7 +339,7 @@ class Session(object):
         parser.add_argument('--session-name', metavar=('<name>'), default='',     type=str, help="A default name for the session. Random name if not provided.")
         parser.add_argument('--save-modules', metavar=('<path>'), default=[], nargs='+', type=str, help="The modules to be stored in the session.")
         parser.add_argument('--log-level', metavar=('<n>'), default=1, type=int, help="The logging level: 0 (debug and above), 1 (info and above), 2 (warn and above), 3 (error and above), 4 (fatal and above)")
-        parser.add_argument('--profiler-level', metavar=('<n>'), default=1, type=int, help="Profiler level. '-1' profiles all level. Default: '1'")
+        parser.add_argument('--profiler-level', metavar=('<n>'), default=-1, type=int, help="Profiler level. '-1' profiles all level. Default: '-1'")
         ## Visdom Server
         parser.add_argument('--visdom', action='store_true', help="Whether to use visdom or not!")
         parser.add_argument('--visdom-port', metavar=('<n>'), default=8097, type=int, help="The port of visdom server, it's on 8097 by default.")
