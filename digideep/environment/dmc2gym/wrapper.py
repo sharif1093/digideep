@@ -14,13 +14,19 @@ import copy
 import six
 
 from .spec2space import spec2space
-from .viewer import Viewer
+
+from dm_control._render import BACKEND
+from dm_control._render import constants
+if BACKEND==constants.GLFW:
+    from .viewer import Viewer
+else:
+    Viewer=None
 
 # TODO: flatten_observation does not work with nested dictionaries.
 from dm_control.rl.control import flatten_observation
 # from dm_control.rl.control import FLAT_OBSERVATION_KEY
 from dm_control.rl.control import PhysicsError
-from dm_control.rl import specs
+from dm_env import specs
 
 
 def _spec_from_observation(observation):
@@ -31,7 +37,7 @@ def _spec_from_observation(observation):
         elif isinstance(value, dict):
             raise NotImplementedError("'dict' types in observations are not supported as they may not preserve order. Use OrderedDict instead.")
         else:
-            result[key] = specs.ArraySpec(value.shape, value.dtype, name=key)
+            result[key] = specs.Array(value.shape, value.dtype, name=key)
     return result
 
 
@@ -217,7 +223,10 @@ class DmControlWrapper(Env, EzPickle):
             if mode == "rgb_array":
                 self.viewer = self.dmcenv.physics.render
             elif mode == "human":
-                self.viewer = Viewer(dmcenv=self.dmcenv, width=640, height=480)
+                if Viewer:
+                    self.viewer = Viewer(dmcenv=self.dmcenv, width=640, height=480)
+                else:
+                    self.viewer = None
             self._viewers[mode] = self.viewer
         return self.viewer
 

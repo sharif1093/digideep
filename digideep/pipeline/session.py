@@ -111,8 +111,9 @@ class Session(object):
             self.state['path_base_sessions'] = os.path.join(os.path.split(checkpoint_path)[0], "evaluations")
         else:
             # OK, we are loading from a checkpoint, just create session from scratch.
-            self.state['path_root_session']  = self.args["session_path"]
-            self.state['path_base_sessions'] = os.path.join(self.state['path_root_session'], 'digideep_sessions')
+            # self.state['path_root_session']  = self.args["session_path"]
+            # self.state['path_base_sessions'] = os.path.join(self.state['path_root_session'], 'digideep_sessions')
+            self.state['path_base_sessions'] = self.args["session_path"]
             
 
         # 1. Creating 'path_base_sessions', i.e. '/tmp/digideep_sessions':
@@ -334,7 +335,7 @@ class Session(object):
         parser.add_argument('--play', action="store_true", help="Will play the stored policy.")
         parser.add_argument('--dry-run', action="store_true", help="If used no footprints will be stored on disc whatsoever.")
         ## Session
-        parser.add_argument('--session-path', metavar=('<path>'), default='/tmp', type=str, help="The path to store the sessions. Default is in /tmp")
+        parser.add_argument('--session-path', metavar=('<path>'), default='/tmp/digideep_sessions', type=str, help="The path to store the sessions. Default is in /tmp")
         parser.add_argument('--session-name', metavar=('<name>'), default='',     type=str, help="A default name for the session. Random name if not provided.")
         parser.add_argument('--save-modules', metavar=('<path>'), default=[], nargs='+', type=str, help="The modules to be stored in the session.")
         parser.add_argument('--log-level', metavar=('<n>'), default=1, type=int, help="The logging level: 0 (debug and above), 1 (info and above), 2 (warn and above), 3 (error and above), 4 (fatal and above)")
