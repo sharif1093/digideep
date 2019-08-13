@@ -269,6 +269,7 @@ class Runner:
             logger.fatal('Operation stopped by the user ...')
         finally:
             logger.fatal('End of operation ...')
+            self.finalize()
 
     def test(self):
         # Make the states of the two explorers train/test exactly the same, for the states of the environments.
@@ -310,6 +311,15 @@ class Runner:
             logger.fatal('Operation stopped by the user ...')
         finally:
             logger.fatal('End of operation ...')
+
+    def finalize(self):
+        # Mark session as done if we have went through all epochs.
+        if self.state["i_epoch"] == self.params["runner"]["n_epochs"]:
+            self.session.mark_as_done()
+        
+        # Close all explorers benignly:
+        for key in self.explorer:
+            self.explorer[key].close()
 
     #####################
     ## Logging Summary ##

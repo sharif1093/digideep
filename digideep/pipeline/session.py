@@ -278,6 +278,10 @@ class Session(object):
         # self.device = torch.device("cpu")
     def get_device(self):
         return self.device
+
+    def mark_as_done(self):
+        with open(os.path.join(self.state['path_session'], 'done.lock'), 'w') as f:
+            print("", file=f)
     
     #################################
     # Apparatus for model save/load #
