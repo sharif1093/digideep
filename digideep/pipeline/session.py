@@ -117,11 +117,18 @@ class Session(object):
             
 
         # 1. Creating 'path_base_sessions', i.e. '/tmp/digideep_sessions':
-        if not os.path.exists(self.state['path_base_sessions']): # TODO: and not self.dry_run:
+        try: # TODO: and not self.dry_run:
             os.makedirs(self.state['path_base_sessions'])
             # Create an empty __init__.py in it!
             with open(os.path.join(self.state['path_base_sessions'], '__init__.py'), 'w') as f:
                 print("", file=f)
+        except Exception as ex:
+            print(ex)
+        # if not os.path.exists(self.state['path_base_sessions']): # TODO: and not self.dry_run:
+        #     os.makedirs(self.state['path_base_sessions'])
+        #     # Create an empty __init__.py in it!
+        #     with open(os.path.join(self.state['path_base_sessions'], '__init__.py'), 'w') as f:
+        #         print("", file=f)
 
         # 2. Create a unique 'path_session':
         if not self.dry_run:
