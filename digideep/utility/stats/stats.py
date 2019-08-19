@@ -12,8 +12,8 @@ from .gpu import get_gpu_count, get_gpu_stats, get_gpu_lines
 ###################
 
 class StatLogger():
-    def __init__(self, monitor_cpu=True, monitor_gpu=True, output="/tmp/monitor.log", interval = 2.0):
-        self.output = "/tmp/monitor.log"
+    def __init__(self, monitor_cpu=True, monitor_gpu=True, output="/tmp/monitor.log", interval=2.0):
+        self.output = output
         self.monitor = Monitor()
         self.monitor.set_output_file(self.output)
 
