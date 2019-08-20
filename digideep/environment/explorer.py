@@ -72,12 +72,17 @@ class Explorer:
         self.state = {}
         self.state["steps"] = 0
         self.state["n_episode"] = 0
+        self.monitor_n_episode()
         self.state["timesteps"] = 0
         self.state["was_reset"] = False
 
         # We only reset once. Later environments will be reset automatically.
         self.reset()
         # Will the results be reported when using ``do_reset``?`
+
+    def monitor_n_episode(self):
+        if self.params["mode"] == "train":
+            monitor.set_meta_key("episode", self.state["n_episode"])
 
     def state_dict(self):
         # TODO" Should we make a deepcopy?
@@ -101,8 +106,7 @@ class Explorer:
             for rew in rewards:
                 if not np.isnan(rew):
                     self.state["n_episode"] += 1
-                    if self.params["mode"] == "train":
-                        monitor.set_meta_key("episode", self.state["n_episode"])
+                    self.monitor_n_episode()
                     # TODO: Add window size to explorer's param list.
                     monitor("/reward/"+self.params["mode"]+"/episodic", rew, window=self.params["win_size"])
         #     print("Everything is here:", episode)
@@ -215,7 +219,7 @@ class Explorer:
             self.state["hidden_state"] = extract_keywise(pre_transition["agents"], "hidden_state")
             self.state["masks"] = np.array([0.0 if done_ else 1.0 for done_ in dones], dtype=np.float32).reshape((-1,1))
 
-            monitor("/reward/"+self.params["mode"]+"/continuous", rewards)
+            monitor("/reward/"+self.params["mode"]+"/continuous", np.mean(rewards))
 
         with KeepTime("render"):
             if self.params["render"]:

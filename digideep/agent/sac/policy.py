@@ -12,8 +12,8 @@ import numpy as np
 from digideep.utility.toolbox import get_class
 from digideep.utility.logging import logger
 
-from digideep.agent.policy.base import PolicyBase
-from digideep.agent.policy.common import Averager
+from digideep.agent.policy_base import PolicyBase
+from digideep.agent.policy_common import Averager
 
 from copy import deepcopy
 

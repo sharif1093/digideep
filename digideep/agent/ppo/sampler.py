@@ -4,8 +4,8 @@ from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
 from digideep.utility.logging import logger
 
 
-from .common import Compose, flatten_memory_to_train_key, get_memory_params, check_nan, check_shape, check_stats, print_line
-from .common import truncate_datalists, flatten_first_two
+from digideep.agent.sampler_common import Compose, flatten_memory_to_train_key, get_memory_params, check_nan, check_shape, check_stats, print_line
+from digideep.agent.sampler_common import truncate_datalists, flatten_first_two
 
 
 def get_last_chunk(buffer, info):
@@ -20,7 +20,7 @@ def get_last_chunk(buffer, info):
     return chunk
 
 def wrap_ff(chunk, info):
-    """ Wrapper for feed-forward policy in :class:`~digideep.agent.ppo.PPO`.
+    """ Wrapper for feed-forward policy in :class:`~digideep.agent.ppo.agent.Agent`.
     
     This function shuffles data and reshapes them. This sampler does not preserve the sequence of data,
     so it is suitable for feed-forward algorithms (other than recurrent ones).

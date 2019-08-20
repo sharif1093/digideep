@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
 
-from digideep.agent.samplers.ppo import sampler_ff, sampler_rn
+from .sampler import sampler_ff, sampler_rn
 # from digideep.agent.samplers.common import check_shape
 
 from digideep.utility.toolbox import get_class
@@ -15,7 +15,7 @@ from digideep.utility.logging import logger
 from digideep.utility.profiling import KeepTime
 from digideep.utility.monitoring import monitor
 
-from .base import AgentBase
+from digideep.agent.agent_base import AgentBase
 
 
 # def update_linear_schedule(optimizer, epoch, total_num_epochs, initial_lr):
@@ -25,7 +25,7 @@ from .base import AgentBase
 #         param_group['lr'] = lr
 
 
-class PPO(AgentBase):
+class Agent(AgentBase):
     """The implementation of the Proximal Policy Optimization (`PPO <https://arxiv.org/abs/1707.06347>`_) method.
 
     Args:
@@ -50,7 +50,7 @@ class PPO(AgentBase):
         
     """
     def __init__(self, session, memory, **params):
-        super(PPO, self).__init__(session, memory, **params)
+        super(Agent, self).__init__(session, memory, **params)
 
         self.device = self.session.get_device()
 

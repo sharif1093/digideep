@@ -7,21 +7,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
 
-from digideep.agent.samplers.ddpg import sampler_re
-# from digideep.agent.samplers.common import check_shape
-
 from digideep.utility.toolbox import get_class
 from digideep.utility.logging import logger
 from digideep.utility.profiling import KeepTime
 from digideep.utility.monitoring import monitor
 
-
-from .base import AgentBase
-from digideep.agent.policy.deterministic import Policy
+# from digideep.agent.sampler_common import check_shape
+from digideep.agent.agent_base import AgentBase
+from .sampler import sampler_re
+from .policy import Policy
 
 # torch.utils.backcompat.broadcast_warning.enabled = True
 
-class DDPG(AgentBase):
+class Agent(AgentBase):
     """This is an implementation of the Deep Deterministic Policy Gradient (`DDPG <https://arxiv.org/abs/1509.02971>`_) method.
     
     Args:
@@ -46,7 +44,7 @@ class DDPG(AgentBase):
     """
 
     def __init__(self, session, memory, **params):
-        super(DDPG, self).__init__(session, memory, **params)
+        super(Agent, self).__init__(session, memory, **params)
 
         self.device = self.session.get_device()
 

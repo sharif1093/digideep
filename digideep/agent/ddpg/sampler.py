@@ -1,17 +1,16 @@
 import numpy as np
 import warnings
 
-from .common import Compose, flatten_memory_to_train_key, get_memory_params, check_nan, check_shape, check_stats, print_line
-from .common import flatten_first_two
-from digideep.utility.logging import logger
+from digideep.agent.sampler_common import Compose, flatten_memory_to_train_key, get_memory_params, check_nan, check_shape, check_stats, print_line
+from digideep.agent.sampler_common import flatten_first_two
 
+from digideep.utility.logging import logger
 from digideep.utility.profiling import KeepTime
 
 def get_sample_memory(buffer, info):
     """Sampler function for DDPG-like algorithms where we want to sample data from an experience replay buffer.
 
-    This function does not sample from final steps where mask equals ``0`` (as they don't have subsequent observations.)
-    This function adds the following key to the memory:
+    This function adds the following key to the buffer:
     
     * ``/observations_2``
 

@@ -9,14 +9,14 @@ import torch.nn.functional as F
 
 import numpy as np
 
-from .distributions import Bernoulli, Categorical, DiagGaussian
-from .common import init_easy, init_rnn
-from .blocks import MLPBlock, RNNBlock, CNNBlock
+from .policy_utils import Bernoulli, Categorical, DiagGaussian
+from .policy_utils import init_easy, init_rnn
+from .policy_utils import MLPBlock, RNNBlock, CNNBlock
+
+from digideep.agent.policy_base import PolicyBase
 
 from digideep.utility.toolbox import get_class #, get_module
 from digideep.utility.logging import logger
-
-from digideep.agent.policy.base import PolicyBase
 
 class Policy(PolicyBase):
     """The stochastic policy to be used with PPO algorithm. This policy supports three different action

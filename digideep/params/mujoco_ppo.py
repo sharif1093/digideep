@@ -181,7 +181,7 @@ def gen_params(cpanel):
     ##################
     params["agents"]["agent"] = {}
     params["agents"]["agent"]["name"] = "agent"
-    params["agents"]["agent"]["type"] = "digideep.agent.PPO"
+    params["agents"]["agent"]["type"] = "digideep.agent.ppo.Agent"
     params["agents"]["agent"]["observation_path"] = cpanel["observation_key"]
     params["agents"]["agent"]["methodargs"] = {}
     params["agents"]["agent"]["methodargs"]["n_steps"] = cpanel["n_steps"]  # Same as "num_steps" / T
@@ -208,7 +208,7 @@ def gen_params(cpanel):
     #############
     agent_name = params["agents"]["agent"]["name"]
     observation_path = params["agents"]["agent"]["observation_path"]
-    params["agents"]["agent"]["policyname"] = "digideep.agent.policy.stochastic.Policy"
+    params["agents"]["agent"]["policyname"] = "digideep.agent.ppo.Policy"
     params["agents"]["agent"]["policyargs"] = {"obs_space": params["env"]["config"]["observation_space"][observation_path],
                                                "act_space": params["env"]["config"]["action_space"][agent_name],
                                                "modelname": "digideep.model.models.MLPModel",

@@ -179,7 +179,7 @@ def gen_params(cpanel):
     ##################
     params["agents"]["agent"] = {}
     params["agents"]["agent"]["name"] = "agent"
-    params["agents"]["agent"]["type"] = "digideep.agent.SAC"
+    params["agents"]["agent"]["type"] = "digideep.agent.sac.Agent"
     params["agents"]["agent"]["observation_path"] = cpanel["observation_key"]
     params["agents"]["agent"]["methodargs"] = {}
     params["agents"]["agent"]["methodargs"]["n_update"] = cpanel["n_update"]  # Number of times to perform PPO update. Alternative name: PPO_EPOCH
@@ -193,7 +193,7 @@ def gen_params(cpanel):
     params["agents"]["agent"]["methodargs"]["z_lambda"] = cpanel["z_lambda"]
 
     ################
-    params["agents"]["agent"]["sampler_list"] = ["digideep.agent.samplers.ddpg.sampler_re"]
+    params["agents"]["agent"]["sampler_list"] = ["digideep.agent.ddpg.sampler.sampler_re"]
     params["agents"]["agent"]["sampler_args"] = {"agent_name": params["agents"]["agent"]["name"],
                                                  "batch_size": cpanel["batch_size"],
                                                  "observation_path": params["agents"]["agent"]["observation_path"]
@@ -207,7 +207,7 @@ def gen_params(cpanel):
     #############
     agent_name = params["agents"]["agent"]["name"]
     observation_path = params["agents"]["agent"]["observation_path"]
-    params["agents"]["agent"]["policyname"] = "digideep.agent.policy.soft_stochastic.Policy"
+    params["agents"]["agent"]["policyname"] = "digideep.agent.sac.Policy"
     params["agents"]["agent"]["policyargs"] = {"obs_space": params["env"]["config"]["observation_space"][observation_path],
                                                "act_space": params["env"]["config"]["action_space"][agent_name],
                                                "hidden_size": 256,
