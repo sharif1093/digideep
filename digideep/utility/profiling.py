@@ -1,7 +1,7 @@
 from collections import OrderedDict as odict
 import time
 import numpy as np
-from .json_encoder import JsonEncoder
+from .json_encoder import JsonNumEncoder
 import os
 
 
@@ -85,7 +85,7 @@ class Profiler:
         if self.filename:
             f = open(self.filename, 'a')
             out = {"meta":meta,"data":self.data}
-            jsonstring = JsonEncoder(out)
+            jsonstring = JsonNumEncoder(out)
             print(jsonstring, flush=True, file=f)
             f.close()
 

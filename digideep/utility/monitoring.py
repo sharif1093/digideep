@@ -1,7 +1,7 @@
 from collections import OrderedDict as odict
 from copy import deepcopy
 import numpy as np
-from digideep.utility.json_encoder import JsonEncoder
+from digideep.utility.json_encoder import JsonNumEncoder
 import time
 
 class WindowValue:
@@ -121,6 +121,10 @@ class Monitor(object):
         # Pack all keys available in the self.data
         self.pack_keys(list(self.data.keys()))
     #########
+    def discard_key(self, key):
+        if key in self.data:
+            del self.data[key]
+    #########
     def __repr__(self):
         self.pack_data()
         res = ""
@@ -148,7 +152,7 @@ class Monitor(object):
         if self.filename:
             f = open(self.filename, 'a')
             for pack in self.pack:
-                jsonstring = JsonEncoder(pack)
+                jsonstring = JsonNumEncoder(pack)
                 print(jsonstring, flush=True, file=f)
             f.close()
 
