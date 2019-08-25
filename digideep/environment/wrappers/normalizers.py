@@ -177,7 +177,7 @@ class WrapperNormalizeActDict(gym.ActionWrapper):
         self.pre_bounds = type(self.action_space.spaces)()
         for key in self.action_space.spaces:
             if key in self.paths:
-                # [0,1]
+                # [-1,1]
                 low = self.action_space.spaces[key].low
                 high = self.action_space.spaces[key].high
                 self.pre_bounds[key] = (low.copy(), high.copy())
