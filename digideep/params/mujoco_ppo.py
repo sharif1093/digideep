@@ -30,9 +30,10 @@ cpanel = OrderedDict()
 # num_frames = 10e6  # Number of frames to train
 cpanel["epoch_size"]    = 2  # cycles
 cpanel["number_epochs"] = 100000
-cpanel["test_activate"] = False # Test Activate
+cpanel["test_activate"] = True # Test Activate
 cpanel["test_interval"] = 10    # Test Interval Every #n Epochs
-cpanel["save_interval"] = 1     # Save Interval Every #n Epochs
+cpanel["test_win_size"] = 5     # Number of episodes to run test.
+cpanel["save_interval"] = 10    # Save Interval Every #n Epochs
 
 cpanel["seed"] = 0
 cpanel["cuda_deterministic"] = False # With TRUE we MIGHT get more deterministic results but at the cost of speed.
@@ -74,6 +75,7 @@ cpanel["n_steps"] = 512    # From Explorer           # Number of frames to produ
 ### Exploitation (~ n_update * batch_size): [PPO_EPOCH] Number of times to perform PPO update, i.e. number of frames to process.
 cpanel["n_update"] = 10    # From Agents
 cpanel["batch_size"] = 128 # From Agents
+cpanel["warm_start"] = 0
 
 cpanel["num_mini_batches"] = 2
 
@@ -115,10 +117,12 @@ def gen_params(cpanel):
     #######################
     norm_wrappers = []
     
+    # Converting observation to 1 level
     norm_wrappers.append(dict(name="digideep.environment.wrappers.normal.WrapperLevelDictObs",
                               args={"path":cpanel["observation_key"],
                               },
                               enabled=False))
+    # Normalizing actions (to be in [-1, 1])
     norm_wrappers.append(dict(name="digideep.environment.wrappers.normalizers.WrapperNormalizeActDict",
                               args={"paths":["agent"]},
                               enabled=False))
@@ -127,12 +131,14 @@ def gen_params(cpanel):
     #######################
     vect_wrappers = []
 
+    # Normalizing observations
     vect_wrappers.append(dict(name="digideep.environment.wrappers.normalizers.VecNormalizeObsDict",
                               args={"paths":[cpanel["observation_key"]],
                                     "clip":10,
                                     "epsilon":1e-8
                               },
                               enabled=True))
+    # Normalizing rewards
     vect_wrappers.append(dict(name="digideep.environment.wrappers.normalizers.VecNormalizeRew",
                               args={"clip":10,
                                     "gamma":cpanel["gamma"],
@@ -245,9 +251,11 @@ def gen_params(cpanel):
     params["explorer"]["train"]["env"] = params["env"]
     params["explorer"]["train"]["do_reset"] = False
     params["explorer"]["train"]["final_action"] = True
+    params["explorer"]["train"]["warm_start"] = cpanel["warm_start"] # In less than "warm_start" steps the agent will take random actions. 
     params["explorer"]["train"]["num_workers"] = cpanel["num_workers"]
     params["explorer"]["train"]["deterministic"] = False # MUST: Takes random actions
     params["explorer"]["train"]["n_steps"] = cpanel["n_steps"] # Number of steps to take a step in the environment
+    params["explorer"]["train"]["n_episodes"] = None # Do not limit # of episodes
     params["explorer"]["train"]["win_size"] = 10 # Number of episodes to episode reward for report
     params["explorer"]["train"]["render"] = False
     params["explorer"]["train"]["render_delay"] = 0
@@ -259,10 +267,12 @@ def gen_params(cpanel):
     params["explorer"]["test"]["env"] = params["env"]
     params["explorer"]["test"]["do_reset"] = False
     params["explorer"]["test"]["final_action"] = False
+    params["explorer"]["test"]["warm_start"] = 0
     params["explorer"]["test"]["num_workers"] = cpanel["num_workers"] # We can use the same amount of workers for testing!
     params["explorer"]["test"]["deterministic"] = True   # MUST: Takes the best action
-    params["explorer"]["test"]["n_steps"] = params["env"]["config"]["max_episode_steps"] # Number of steps to take a step in the environment
-    params["explorer"]["test"]["win_size"] = 2
+    params["explorer"]["test"]["n_steps"] = None # Do not limit # of steps
+    params["explorer"]["test"]["n_episodes"] = cpanel["test_win_size"]
+    params["explorer"]["test"]["win_size"] = cpanel["test_win_size"] # Extra episodes won't be counted
     params["explorer"]["test"]["render"] = False
     params["explorer"]["test"]["render_delay"] = 0
     params["explorer"]["test"]["seed"] = cpanel["seed"] + 100 # We want to make the seed of test environments different from training.
@@ -273,9 +283,11 @@ def gen_params(cpanel):
     params["explorer"]["eval"]["env"] = params["env"]
     params["explorer"]["eval"]["do_reset"] = False
     params["explorer"]["eval"]["final_action"] = False
+    params["explorer"]["eval"]["warm_start"] = 0
     params["explorer"]["eval"]["num_workers"] = 1
     params["explorer"]["eval"]["deterministic"] = True   # MUST: Takes the best action
-    params["explorer"]["eval"]["n_steps"] = params["env"]["config"]["max_episode_steps"] # Number of steps to take a step in the environment
+    params["explorer"]["eval"]["n_steps"] = None # Do not limit # of steps
+    params["explorer"]["eval"]["n_episodes"] = 1
     params["explorer"]["eval"]["win_size"] = -1
     params["explorer"]["eval"]["render"] = True
     params["explorer"]["eval"]["render_delay"] = 0
