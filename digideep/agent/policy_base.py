@@ -2,6 +2,7 @@ from abc import abstractmethod
 import torch
 import torch.nn as nn
 import numpy as np
+from digideep.utility.logging import logger
 
 class PolicyBase(object):
     """The base class for all policy classes. Policy is a model inside the agent which generates
@@ -23,6 +24,11 @@ class PolicyBase(object):
     def __init__(self, device):
         self.device = device
         self.model = nn.ModuleDict()
+    
+    def post_init(self):
+        self.model_to_gpu()
+        logger("Number of parameters: <", self.count_parameters(), '>')
+        # Summary writer of PyTorch goes here.
 
     def model_to_gpu(self):
         """Function to transfer ``self.model`` to the GPU. It will use PyTorch's ``nn.DataParallel``
