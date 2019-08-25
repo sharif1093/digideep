@@ -47,6 +47,11 @@ class AgentBase:
         hidden_size = 1
         return np.zeros((num_workers, hidden_size), dtype=np.float32)
     
+    def random_action_generator(self, envs, num_workers):
+        actions = np.array([envs.action_space.spaces[self.params["name"]].sample() for i in range(num_workers)])
+        hidden_state = self.reset_hidden_state(num_workers)
+        return dict(actions=actions, hidden_state=hidden_state)
+    
     @abstractmethod
     def action_generator(self, observations, hidden_state, masks, deterministic=False):
         """
