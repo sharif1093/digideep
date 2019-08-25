@@ -39,10 +39,9 @@ class Runner:
 
         profiler.reset()
         monitor.reset()
-        monitor.set_meta_key("epoch", self.state["i_epoch"])
+        self.monitor_epoch()
 
-    def _inc_epoch(self):
-        self.state["i_epoch"] += 1
+    def monitor_epoch(self):
         monitor.set_meta_key("epoch", self.state["i_epoch"])
     
     def start(self, session):
@@ -152,8 +151,11 @@ class Runner:
 
         # We do intentionally update the state of test/eval explorers with the state of "train" explorer.
         # We are only interested in states of the reward/observation normalizers.
-        self.explorer["test"].load_state_dict(self.explorer["train"].state_dict())
-        self.explorer["eval"].load_state_dict(self.explorer["train"].state_dict())
+        self._sync_normalizations(main_explorer="train", target_explorer="test")
+        self._sync_normalizations(main_explorer="train", target_explorer="eval")
+
+        # self.explorer["test"].load_state_dict(self.explorer["train"].state_dict())
+        # self.explorer["eval"].load_state_dict(self.explorer["train"].state_dict())
         
         self.explorer["test"].reset()
         self.explorer["eval"].reset()
@@ -254,7 +256,8 @@ class Runner:
                     self.state["i_cycle"] += 1
                 # End of Cycle
 
-                self._inc_epoch()
+                self.state["i_epoch"] += 1
+                self.monitor_epoch()
                 # NOTE: We may save/test after each cycle or at intervals.
                 
                 # 1. Perform the test
@@ -277,8 +280,14 @@ class Runner:
             if self.state["i_epoch"] % self.params["runner"]["test_int"] == 0:
                 with KeepTime("/"):
                     with KeepTime("test"):
-                        self.explorer["test"].load_state_dict(self.explorer["train"].state_dict())
+                        self._sync_normalizations(main_explorer="train", target_explorer="test")
+                        # self.explorer["test"].load_state_dict(self.explorer["train"].state_dict())
                         self.explorer["test"].reset()
+                        # TODO: Do update until "win_size" episodes get executed.
+                        # That is in: self.explorer["test"].state["n_episode"]
+                        # Make sure that n_steps is 1.
+                        # If num_worker>1 it is possible that we get more than required test episodes.
+                        # The rest will be reported with the next test run.
                         self.explorer["test"].update()
 
 
@@ -311,15 +320,31 @@ class Runner:
             logger.fatal('Operation stopped by the user ...')
         finally:
             logger.fatal('End of operation ...')
+            self.finalize(train=False)
 
-    def finalize(self):
-        # Mark session as done if we have went through all epochs.
-        if self.state["i_epoch"] == self.params["runner"]["n_epochs"]:
-            self.session.mark_as_done()
+    def finalize(self, train=True):
+        if train:
+            # Mark session as done if we have went through all epochs.
+            if self.state["i_epoch"] == self.params["runner"]["n_epochs"]:
+                self.session.mark_as_done()
         
         # Close all explorers benignly:
         for key in self.explorer:
             self.explorer[key].close()
+
+
+    #####################
+    def _sync_normalizations(self, main_explorer, target_explorer):
+        state_dict = self.explorer[main_explorer].state_dict()
+        
+        keys = ["digideep.environment.wrappers.normalizers:VecNormalizeObsDict", "digideep.environment.wrappers.normalizers:VecNormalizeRew"]
+        
+        state_dict_mod = {}
+        for k in keys:
+            if k in state_dict["envs"]:
+                state_dict_mod[k] = state_dict["envs"][k]
+
+        self.explorer[target_explorer].envs.load_state_dict(state_dict_mod)
 
     #####################
     ## Logging Summary ##
@@ -345,11 +370,11 @@ class Runner:
         overall = int(n_frame / elapsed)
         
         logger("---------------------------------------------------------")
-        logger("Frame={frame:4.1e} | Episodes={episode:4.1e} | Epoch({cycle:3d}cy)={epoch:4d} | Overall({n_frame:4.1e}F/{e_time:4.1f}s)={freq:4d}Hz".format(
-                frame=frame,
-                episode=episode,
+        logger("Epoch({cycle:3d}cy)={epoch:4d} | Frame={frame:4.1e} | Episodes={episode:4.1e} | Overall({n_frame:4.1e}F/{e_time:4.1f}s)={freq:4d}Hz".format(
                 cycle=self.params["runner"]["n_cycles"],
                 epoch=self.state["i_epoch"],
+                frame=frame,
+                episode=episode,
                 n_frame=n_frame,
                 e_time=elapsed,
                 freq=overall
