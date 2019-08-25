@@ -72,9 +72,15 @@ class Explorer:
         self.state = {}
         self.state["steps"] = 0
         self.state["n_episode"] = 0
-        self.monitor_n_episode()
         self.state["timesteps"] = 0
         self.state["was_reset"] = False
+
+        self.local = {}
+        self.local["steps"] = 0
+        self.local["n_episode"] = 0
+
+        self.monitor_n_episode()
+        self.monitor_timesteps()
 
         # We only reset once. Later environments will be reset automatically.
         self.reset()
@@ -83,6 +89,9 @@ class Explorer:
     def monitor_n_episode(self):
         if self.params["mode"] == "train":
             monitor.set_meta_key("episode", self.state["n_episode"])
+    def monitor_timesteps(self):
+        if self.params["mode"] == "train":
+            monitor.set_meta_key("frame", self.state["timesteps"])
 
     def state_dict(self):
         # TODO" Should we make a deepcopy?
@@ -90,6 +99,9 @@ class Explorer:
     def load_state_dict(self, state_dict):
         self.state.update(state_dict["state"])
         self.envs.load_state_dict(state_dict["envs"])
+
+        self.monitor_n_episode()
+        self.monitor_timesteps()
         
         # if self.params["mode"] in ["test", "eval"]:
         #     # We reset the explorer in case of test/eval to clear the history of observations/masks/hidden_state.
@@ -100,27 +112,19 @@ class Explorer:
         """This function will extract episode information from infos and will send them to
         :class:`~digideep.utility.monitoring.Monitor` class.
         """
-        # print(infos)
+        # This episode keyword only exists if we use a Monitor wrapper.
+        # This keyword will only appear at the "reset" times.
+        # TODO: If this is a true multi-agent system, then the rewards
+        #       must be separated as well!
         if '/episode/r' in infos.keys():
             rewards = infos['/episode/r']
             for rew in rewards:
                 if not np.isnan(rew):
+                    self.local["n_episode"] += 1
                     self.state["n_episode"] += 1
+                    
                     self.monitor_n_episode()
-                    # TODO: Add window size to explorer's param list.
                     monitor("/reward/"+self.params["mode"]+"/episodic", rew, window=self.params["win_size"])
-        #     print("Everything is here:", episode)
-        #     # for e in 
-        #     # self.state["n_episode"] += 1
-        #     # r = info['episode']['r']
-        #     # monitor("/explore/reward/"+self.params["mode"], r)
-        
-        # for info in infos:
-            # This episode keyword only exists if we use a Monitor wrapper.
-            # This keyword will only appear at the "reset" times.
-            # TODO: If this is a true multi-agent system, then the rewards
-            #       must be separated as well!
-            
 
     def close(self):
         """It closes all environments.
@@ -166,13 +170,30 @@ class Explorer:
         with KeepTime("gen_action"):
             publish_agents = True 
             agents = {}
-            for agent_name in self.agents:
-                if (not final_step) or (self.params["final_action"]):
-                    action_generator = self.agents[agent_name].action_generator
-                    agents[agent_name] = action_generator(observations, hidden_state[agent_name], masks, deterministic=self.params["deterministic"])
+            # TODO: We are assuming a one-level action space.
+            if (not final_step) or (self.params["final_action"]):
+                if self.state["steps"] < self.params["warm_start"]:
+                    # Take RANDOM actions if warm-starting
+                    for agent_name in self.agents:
+                        agents[agent_name] = self.agents[agent_name].random_action_generator(self.envs, self.params["num_workers"])
                 else:
-                    publish_agents = False
-                # We are saving the "new" hidden_state now.
+                    # Take REAL actions if warm-starting
+                    for agent_name in self.agents:
+                        action_generator = self.agents[agent_name].action_generator
+                        agents[agent_name] = action_generator(observations, hidden_state[agent_name], masks, deterministic=self.params["deterministic"])
+
+            else:
+                publish_agents = False
+            # We are saving the "new" hidden_state now.
+
+
+            # for agent_name in self.agents:
+            #     if (not final_step) or (self.params["final_action"]):
+            #         action_generator = self.agents[agent_name].action_generator
+            #         agents[agent_name] = action_generator(observations, hidden_state[agent_name], masks, deterministic=self.params["deterministic"])
+            #     else:
+            #         publish_agents = False
+                
             
         with KeepTime("form_dictionary"):
             if publish_agents:
@@ -248,8 +269,7 @@ class Explorer:
 
             self.state["steps"] += 1
             self.state["timesteps"] += self.params["num_workers"]
-            if self.params["mode"] == "train":
-                monitor.set_meta_key("frame", self.state["timesteps"])
+            self.monitor_timesteps()
             # TODO: Adapt with the new dict_of_lists data structure.
             with KeepTime("report_reward"):
                 self.report_rewards(infos)
@@ -278,38 +298,44 @@ class Explorer:
 
         self.state["was_reset"] = False
 
-        # counter_exit = 0
-
         # Run T (n-step) steps.
-        for t in range(self.params["n_steps"]):
+        self.local["steps"] = 0
+        self.local["n_episode"] = 0
+
+        while (self.params["n_steps"]    and self.local["steps"]     < self.params["n_steps"]) or \
+              (self.params["n_episodes"] and self.local["n_episode"] < self.params["n_episodes"]):
+
             with KeepTime("step"):
                 # print("one exploration step ...")
                 transition = self.step()
                 
-                # if counter_exit<10:
-                #     print("c=", counter_exit, " --> ", transition)
-                #     counter_exit += 1
-                # else:
-                #     exit()
+            # if self.params["mode"]=="test":
+            #     print("We are here man!")
 
             with KeepTime("append"):
                 # Data is flattened in the explorer per se.
                 transition = flatten_dict(transition)
                 # Update the trajectory with the current list of data.
                 # Put nones if the key is absent.
-                update_dict_of_lists(trajectory, transition, index=t)
+                update_dict_of_lists(trajectory, transition, index=self.local["steps"])
+            
+            self.local["steps"] += 1
 
         with KeepTime("poststep"):
             # Take one prestep so we have the next observation/hidden_state/masks/action/value/ ...
             transition = self.prestep(final_step=True)
             transition = flatten_dict(transition)
-            update_dict_of_lists(trajectory, transition, index=t)
+            update_dict_of_lists(trajectory, transition, index=self.local["steps"])
 
             # Complete the trajectory if one key was in a transition, but did not occur in later
             # transitions. "length=n_steps+1" is because of counting final out-of-loop prestep.
-            complete_dict_of_list(trajectory, length=self.params["n_steps"]+1)
+            
+            # complete_dict_of_list(trajectory, length=self.params["n_steps"]+1)
+            complete_dict_of_list(trajectory, length=self.local["steps"]+1)
             result = convert_time_to_batch_major(trajectory)
-
+        
+        # We discard the rest of monitored episodes for the test mode to prevent them from affecting next test.
+        monitor.discard_key("/reward/test/episodic")
         return result
 
 
