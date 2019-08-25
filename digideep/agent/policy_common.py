@@ -22,18 +22,21 @@ class Averager:
     def update_target(self):
         """Upon calling this function the target model will be updated based on its ``mode``.
         """
+        self.state['update_counter'] += 1
+        interval = self.params.get("interval", 1)
+        if self.state['update_counter'] % interval != 0:
+            return
+
         mode = self.params["mode"]
         if mode == 'soft':
             polyak_factor = self.params["polyak_factor"]
             # y = TAU*x + (1 - TAU)*y
             for target_param, param in zip(self.model_target.parameters(), self.model.parameters()):
                 target_param.data.copy_(target_param.data * (1.0 - polyak_factor) + param.data * polyak_factor)
+            self.state['update_counter'] = 0
         elif mode == 'hard':
-            self.state['update_counter'] += 1
-            interval = self.params["interval"]
-            if self.state['update_counter'] % interval == 0:
-                self.model_target.load_state_dict(self.model.state_dict())
-                self.state['update_counter'] = 0
+            self.model_target.load_state_dict(self.model.state_dict())
+            self.state['update_counter'] = 0
     def state_dict(self):
         return {"state":self.state}
     def load_state_dict(self, state_dict):
