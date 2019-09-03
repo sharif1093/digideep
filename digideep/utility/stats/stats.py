@@ -6,6 +6,7 @@ from digideep.utility.timer import Timer
 from digideep.utility.monitoring import Monitor
 from .cpu import get_cpu_count, get_cpu_stats
 from .gpu import get_gpu_count, get_gpu_stats, get_gpu_lines
+import os
 # We don't want to use the general monitor.
 ###################
 ## CREATE TIMERS ##
@@ -20,8 +21,13 @@ class StatLogger():
         self.monitor_cpu = monitor_cpu
         self.monitor_gpu = monitor_gpu
 
-        self.cpu_count = get_cpu_count()
-        self.gpu_count = get_gpu_count()
+        if not "CUDA_VISIBLE_DEVICES" in os.environ:
+            self.monitor_gpu = False
+
+        if self.monitor_cpu:
+            self.cpu_count = get_cpu_count()
+        if self.monitor_gpu:
+            self.gpu_count = get_gpu_count()
 
         self.interval = interval # seconds
         self.timer = Timer(self._updater, self.interval)
