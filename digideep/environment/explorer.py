@@ -240,7 +240,8 @@ class Explorer:
             self.state["hidden_state"] = extract_keywise(pre_transition["agents"], "hidden_state")
             self.state["masks"] = np.array([0.0 if done_ else 1.0 for done_ in dones], dtype=np.float32).reshape((-1,1))
 
-            monitor("/reward/"+self.params["mode"]+"/continuous", np.mean(rewards))
+            # NOTE: Uncomment if you find useful information in the continuous rewards ...
+            # monitor("/reward/"+self.params["mode"]+"/continuous", np.mean(rewards))
 
         with KeepTime("render"):
             if self.params["render"]:
