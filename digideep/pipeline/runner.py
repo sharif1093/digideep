@@ -151,8 +151,8 @@ class Runner:
 
         # We do intentionally update the state of test/eval explorers with the state of "train" explorer.
         # We are only interested in states of the reward/observation normalizers.
-        self._sync_normalizations(main_explorer="train", target_explorer="test")
-        self._sync_normalizations(main_explorer="train", target_explorer="eval")
+        self._sync_normalizations(source_explorer="train", target_explorer="test")
+        self._sync_normalizations(source_explorer="train", target_explorer="eval")
 
         # self.explorer["test"].load_state_dict(self.explorer["train"].state_dict())
         # self.explorer["eval"].load_state_dict(self.explorer["train"].state_dict())
@@ -280,7 +280,7 @@ class Runner:
             if self.state["i_epoch"] % self.params["runner"]["test_int"] == 0:
                 with KeepTime("/"):
                     with KeepTime("test"):
-                        self._sync_normalizations(main_explorer="train", target_explorer="test")
+                        self._sync_normalizations(source_explorer="train", target_explorer="test")
                         # self.explorer["test"].load_state_dict(self.explorer["train"].state_dict())
                         self.explorer["test"].reset()
                         # TODO: Do update until "win_size" episodes get executed.
@@ -334,8 +334,8 @@ class Runner:
 
 
     #####################
-    def _sync_normalizations(self, main_explorer, target_explorer):
-        state_dict = self.explorer[main_explorer].state_dict()
+    def _sync_normalizations(self, source_explorer, target_explorer):
+        state_dict = self.explorer[source_explorer].state_dict()
         
         keys = ["digideep.environment.wrappers.normalizers:VecNormalizeObsDict", "digideep.environment.wrappers.normalizers:VecNormalizeRew"]
         
