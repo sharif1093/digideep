@@ -1,5 +1,6 @@
 import threading
 import numpy as np
+from sys import getsizeof
 from digideep.utility.logging import logger
 
 
@@ -112,8 +113,20 @@ class Memory:
                         assert self.state["n_batch"] == batch_size, "Number of batches in "+key+" is not consistent with the buffer ("+self.state["n_batch"]+")"
                     else:
                         self.state["n_batch"] = batch_size
-                    self.buffer[key] = np.empty(shape=(batch_size, self.buffer_size, *chunk[key].shape[2:]), dtype=np.float32)
-                    self.buffer[key][:,0:self.state["i_index"]] = np.nan
+                    # self.buffer[key] = np.empty(shape=(batch_size, self.buffer_size, *chunk[key].shape[2:]), dtype=np.float32)
+
+                    data_type = chunk[key].dtype
+                    
+                    self.buffer[key] = np.empty(shape=(batch_size, self.buffer_size, *chunk[key].shape[2:]), dtype=chunk[key].dtype)
+                    if np.issubdtype(data_type, np.floating):
+                        self.buffer[key][:,0:self.state["i_index"]] = np.nan
+                    elif np.issubdtype(data_type, np.integer):
+                        self.buffer[key][:,0:self.state["i_index"]] = np.iinfo(data_type).min
+
+                    size = getsizeof(self.buffer[key]) / 1024. / 1024.
+                    logger.warn("Dictionary entry [{}] added (type: {:s}, size: {:9.1f} MB)".format(key,  str(chunk[key].dtype), size))
+                    
+                    
                 # Update memory
                 self.buffer[key][:,self.state["i_index"]-1:self.state["i_index"]+trans_size] = chunk[key]
 
