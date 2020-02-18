@@ -33,7 +33,8 @@ class WindowValue:
         num = self.data["num"]
         var = np.power(self.data["std"], 2) * (num-1)
         var = var + np.power(np.multiply(value, num)-sum, 2) / num / (num+1)
-        return np.sqrt(var / num)
+        res = np.sqrt(var / num)
+        return res
     
     def get_win(self):
         return self.window
@@ -97,7 +98,6 @@ class Monitor(object):
             else:
                 assert self.data[name].get_win() == window, "Window size cannot change in the midst of monitoring!"
                 self.data[name].append(value)
-            
             # We need to pack those with win>-1 instantly.
             if self.data[name].get_win() >= 0:
                 self.pack_keys([name])
@@ -136,12 +136,12 @@ class Monitor(object):
                 val = data[key]
                 
                 res += ">> {name:s} [{num:d}x] = {mean:s} (\xB1{std:s} %95) in range{{{r_min:s} <= {r_max:s}}}\n".format(
-                           name=key,
-                           num=val["num"],
-                           mean=np.array2string(val["sum"]/val["num"], precision=3),
-                           std=np.array2string(2*val["std"], precision=3),
-                           r_min=np.array2string(val["min"], precision=3),
-                           r_max=np.array2string(val["max"], precision=3)
+                        name=key,
+                        num=val["num"],
+                        mean=np.array2string(val["sum"]/val["num"], precision=3),
+                        std=np.array2string(2*val["std"], precision=3),
+                        r_min=np.array2string(val["min"], precision=3),
+                        r_max=np.array2string(val["max"], precision=3)
                         )
         return res
     
