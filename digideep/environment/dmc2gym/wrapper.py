@@ -123,6 +123,7 @@ class DmControlWrapper(Env, EzPickle):
     def seed(self, seed=None):
         """Seeds the environment.
         """
+        np.random.seed(seed)
         self.np_random, seed = seeding.np_random(seed)
         self.dmcenv.task._random = self.np_random
         return [seed]

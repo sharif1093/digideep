@@ -190,6 +190,9 @@ class MakeEnvironment:
         return envs
     
     def run_wrapper_stack(self, env, stack):
+        """
+        Apply a series of wrappers.
+        """
         for index in range(len(stack)):
             if stack[index]["enabled"]:
                 wrapper_class = get_class(stack[index]["name"])

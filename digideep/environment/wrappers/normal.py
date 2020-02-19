@@ -77,7 +77,8 @@ class WrapperTransposeImage(gym.ObservationWrapper):
     def __init__(self, env, mode, path, op=[2, 0, 1]):
         super(WrapperTransposeImage, self).__init__(env)
         
-        assert len(op) == 3, f"Error: Operation, {str(op)}, must be dim3"
+        # assert len(op) == 3, f"Error: Operation, {str(op)}, must be dim3"
+        assert len(op) == 3, "Error: Operation, {}, must be dim3".format(str(op))
 
         self.path = path
         self.op = op

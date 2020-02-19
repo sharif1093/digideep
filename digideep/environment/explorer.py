@@ -119,7 +119,7 @@ class Explorer:
         if '/episode/r' in infos.keys():
             rewards = infos['/episode/r']
             for rew in rewards:
-                if not np.isnan(rew):
+                if (rew is not None) and (not np.isnan(rew)):
                     self.local["n_episode"] += 1
                     self.state["n_episode"] += 1
                     
@@ -305,13 +305,9 @@ class Explorer:
 
         while (self.params["n_steps"]    and self.local["steps"]     < self.params["n_steps"]) or \
               (self.params["n_episodes"] and self.local["n_episode"] < self.params["n_episodes"]):
-
             with KeepTime("step"):
                 # print("one exploration step ...")
                 transition = self.step()
-                
-            # if self.params["mode"]=="test":
-            #     print("We are here man!")
 
             with KeepTime("append"):
                 # Data is flattened in the explorer per se.
@@ -319,7 +315,7 @@ class Explorer:
                 # Update the trajectory with the current list of data.
                 # Put nones if the key is absent.
                 update_dict_of_lists(trajectory, transition, index=self.local["steps"])
-            
+
             self.local["steps"] += 1
 
         with KeepTime("poststep"):

@@ -12,16 +12,16 @@ import collections
 
 def spec2space_single(spec):
     """
+    It should handles conversion of `dm_control`'s `spec` types `Array`, `BoundedArray`, and `DiscreteArray` with arbitrary dtypes
+    to `gym`'s `space` types `Box` and `Discrete`.
+
     Args:
         spec: A single dm_control ``spec``.
 
     Returns:
         :obj:`gym.spaces`: The ``gym`` equivalent ``spaces``.
     """
-
-    if (type(spec) is specs.BoundedArray) and (spec.dtype == np.int):
-    # Discrete
-        # warnings.warn("The DMC environment uses a discrete action space!")
+    if (type(spec) is specs.DiscreteArray):
         if spec.minimum == 0:
             return spaces.Discrete(spec.maximum)
         else:
@@ -33,9 +33,16 @@ def spec2space_single(spec):
         # if clip_inf:
         #     _min = np.clip(_min, -sys.float_info.max, sys.float_info.max)
         #     _max = np.clip(_max, -sys.float_info.max, sys.float_info.max)
-        return spaces.Box(_min, _max, dtype=np.float32)        
+        return spaces.Box(_min, _max, dtype=spec.dtype)
     elif type(spec) is specs.Array:
-        return spaces.Box(-np.inf, np.inf, shape=spec.shape, dtype=np.float32)
+        if np.issubdtype(spec.dtype, np.floating):
+            dtype_min = -np.inf # np.finfo(spec.dtype).min
+            dtype_max =  np.inf # np.finfo(spec.dtype).max
+        elif np.issubdtype(spec.dtype, np.integer):
+            dtype_min = np.iinfo(spec.dtype).min
+            dtype_max = np.iinfo(spec.dtype).max
+
+        return spaces.Box(dtype_min, dtype_max, shape=spec.shape, dtype=spec.dtype)
     else:
         raise ValueError('Unknown spec in spec2space_single!')
 

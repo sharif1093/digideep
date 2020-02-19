@@ -2,7 +2,6 @@ import gc
 import time
 
 from digideep.environment import Explorer
-from digideep.memory.generic import Memory
 from digideep.utility.logging import logger
 from digideep.utility.toolbox import seed_all, get_class, get_module
 from digideep.utility.profiling import profiler, KeepTime
@@ -73,8 +72,9 @@ class Runner:
         """
         ## Instantiate Memory
         self.memory = {}
-        for m in self.params["memory"]:
-            self.memory[m] = Memory(self.session, **self.params["memory"][m])
+        for memory_name in self.params["memory"]:
+            memory_class = get_class(self.params["memory"][memory_name]["type"])
+            self.memory[memory_name] = memory_class(self.session, mode=memory_name, **self.params["memory"][memory_name]["args"])
         
         ## Instantiate Agents
         self.agents = {}
@@ -356,7 +356,6 @@ class Runner:
         * Variables sent to the :class:`~digideep.utility.monitoring.Monitor`.
         * Profiling information, i.e. registered timing information in the :class:`~digideep.utility.profiling.Profiler`.
         """
-        
         # monitor.get_meta_key("frame")
         # monitor.get_meta_key("episode")
         # monitor.get_meta_key("epoch")
@@ -379,7 +378,7 @@ class Runner:
                 e_time=elapsed,
                 freq=overall
                 )
-              )
+            )
         
         # Printing monitoring information:
         logger("MONITORING:\n"+str(monitor))

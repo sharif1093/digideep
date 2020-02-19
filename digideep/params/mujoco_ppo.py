@@ -28,12 +28,12 @@ cpanel = OrderedDict()
 #####################
 ### Runner Parameters
 # num_frames = 10e6  # Number of frames to train
-cpanel["epoch_size"]    = 2  # cycles
-cpanel["number_epochs"] = 100000
-cpanel["test_activate"] = True # Test Activate
-cpanel["test_interval"] = 10    # Test Interval Every #n Epochs
-cpanel["test_win_size"] = 5     # Number of episodes to run test.
-cpanel["save_interval"] = 10    # Save Interval Every #n Epochs
+cpanel["number_epochs"] = 100000 # epochs
+cpanel["epoch_size"]    = 2      # cycles
+cpanel["test_activate"] = True   # Test Activate
+cpanel["test_interval"] = 10     # Test Interval Every #n Epochs
+cpanel["test_win_size"] = 10     # Number of episodes to run test.
+cpanel["save_interval"] = 10     # Save Interval Every #n Epochs
 
 cpanel["seed"] = 0
 cpanel["cuda_deterministic"] = False # With TRUE we MIGHT get more deterministic results but at the cost of speed.
@@ -70,11 +70,11 @@ cpanel["gamma"] = 0.99     # The gamma parameter used in VecNormalize | Agent.pr
 ##################################
 ### Exploration/Exploitation Balance
 ### Exploration (~ num_workers * n_steps)
-cpanel["num_workers"] = 4  # From Explorer           # Number of exploratory workers working together
-cpanel["n_steps"] = 512    # From Explorer           # Number of frames to produce
+cpanel["num_workers"] = 4     # From Explorer           # Number of exploratory workers working together
+cpanel["n_steps"] = 512       # From Explorer           # Number of frames to produce
 ### Exploitation (~ n_update * batch_size): [PPO_EPOCH] Number of times to perform PPO update, i.e. number of frames to process.
-cpanel["n_update"] = 10    # From Agents
-cpanel["batch_size"] = 128 # From Agents
+cpanel["n_update"] = 10       # From Agents
+cpanel["batch_size"] = 128    # From Agents
 cpanel["warm_start"] = 0
 
 cpanel["num_mini_batches"] = 2
@@ -83,6 +83,7 @@ cpanel["num_mini_batches"] = 2
 
 #####################
 ### Agents Parameters
+cpanel["agent_type"] = "digideep.agent.ppo.Agent"
 cpanel["use_gae"] = True   # Whether to use GAE to calculate returns or not.
 cpanel["tau"] = 0.95       # The parameter used for calculating advantage function.
 cpanel["recurrent"] = False
@@ -187,7 +188,7 @@ def gen_params(cpanel):
     ##################
     params["agents"]["agent"] = {}
     params["agents"]["agent"]["name"] = "agent"
-    params["agents"]["agent"]["type"] = "digideep.agent.ppo.Agent"
+    params["agents"]["agent"]["type"] = cpanel["agent_type"]
     params["agents"]["agent"]["observation_path"] = cpanel["observation_key"]
     params["agents"]["agent"]["methodargs"] = {}
     params["agents"]["agent"]["methodargs"]["n_steps"] = cpanel["n_steps"]  # Same as "num_steps" / T
@@ -234,10 +235,8 @@ def gen_params(cpanel):
     params["memory"] = {}
 
     params["memory"]["train"] = {}
-    # Number of samples in a chunk
-    params["memory"]["train"]["chunk_sample_len"] = cpanel["n_steps"]
-    # Number of chunks in the buffer:
-    params["memory"]["train"]["buffer_chunk_len"] = cpanel["memory_size_in_chunks"]
+    params["memory"]["train"]["type"] = "digideep.memory.rollbuffer.Memory"
+    params["memory"]["train"]["args"] = {"chunk_sample_len":cpanel["n_steps"], "buffer_chunk_len":cpanel["memory_size_in_chunks"], "overrun":1}
     ##############################################
 
     

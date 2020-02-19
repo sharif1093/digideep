@@ -138,12 +138,18 @@ class Agent(AgentBase):
 
         with KeepTime("to_torch"):
             # ['/obs_with_key', '/masks', '/agents/agent/actions', '/agents/agent/hidden_state', '/rewards', '/obs_with_key_2', ...]
-            state      = torch.from_numpy(batch["/obs_with_key"]).to(self.device)
-            action     = torch.from_numpy(batch["/agents/"+self.params["name"]+"/actions"]).to(self.device)
-            reward     = torch.from_numpy(batch["/rewards"]).to(self.device)
-            next_state = torch.from_numpy(batch["/obs_with_key_2"]).to(self.device)
-            # masks      = torch.from_numpy(batch["/masks"]).to(self.device).view(-1)
+            state      = torch.from_numpy(batch["/observations"+ self.params["observation_path"]]).to(self.device).float()
+            action     = torch.from_numpy(batch["/agents/"+self.params["name"]+"/actions"]).to(self.device).float()
+            reward     = torch.from_numpy(batch["/rewards"]).to(self.device).float()
+            next_state = torch.from_numpy(batch["/observations"+self.params["observation_path"]+"_2"]).to(self.device).float()
             masks      = torch.from_numpy(batch["/masks"]).to(self.device)
+            
+            # state      = torch.from_numpy(batch["/obs_with_key"]).to(self.device)
+            # action     = torch.from_numpy(batch["/agents/"+self.params["name"]+"/actions"]).to(self.device)
+            # reward     = torch.from_numpy(batch["/rewards"]).to(self.device)
+            # next_state = torch.from_numpy(batch["/obs_with_key_2"]).to(self.device)
+            # # masks      = torch.from_numpy(batch["/masks"]).to(self.device).view(-1)
+            # masks      = torch.from_numpy(batch["/masks"]).to(self.device)
 
         with KeepTime("loss"):
             expected_q_value = self.policy.model["softq"](state, action)
@@ -159,6 +165,7 @@ class Agent(AgentBase):
             value_loss = self.criterion["value"](expected_value, next_value.detach())
 
             log_prob_target = expected_new_q_value - expected_value
+            # TODO: Apperantly the calculation of actor_loss is problematic: none of its ingredients have gradients! So backprop does nothing.
             actor_loss = (log_prob * (log_prob - log_prob_target).detach()).mean()
             
             mean_loss = float(self.params["methodargs"]["mean_lambda"]) * mean.pow(2).mean()

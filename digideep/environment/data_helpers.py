@@ -109,10 +109,18 @@ def nonify(element):
         for k in element:
             el.append(nonify(k))
         return el
+    elif isinstance(element, np.ndarray) and np.issubdtype(element.dtype, np.floating):
+        return np.full_like(element, fill_value=np.nan, dtype=element.dtype)
+    elif isinstance(element, np.ndarray) and np.issubdtype(element.dtype, np.integer):
+        return np.full_like(element, fill_value=0, dtype=element.dtype)
     elif isinstance(element, np.ndarray):
-        return np.full_like(element, fill_value=np.nan, dtype=np.float)
+        return np.full_like(element, fill_value=np.nan, dtype=element.dtype)
+    elif isinstance(element, float):
+        return np.nan
+    elif isinstance(element, int):
+        return 0
     else:
-        return None
+        None
 
 def update_dict_of_lists(dic, item, index=0):
     """
@@ -215,7 +223,10 @@ def convert_time_to_batch_major(episode):
     episode_batch = {}
     for key in episode.keys():
         try:
-            val = np.array(episode[key], dtype=np.float32).copy()  #TODO: Should we copy?
+            # print(key, "=", episode[key])
+            entry_data_type = episode[key][0].dtype
+
+            val = np.array(episode[key], dtype=entry_data_type).copy()  #TODO: Should we copy?
             # make inputs batch-major instead of time-major
             episode_batch[key] = val.swapaxes(0, 1)
         except Exception as ex:
@@ -340,5 +351,6 @@ def list_of_dicts_to_flattened_dict_of_lists(List, length):
 
 def flattened_dict_of_lists_to_dict_of_numpy(dic):
     for key in dic:
-        dic[key] = np.asarray(dic[key], dtype=np.float32)
+        # dic[key] = np.asarray(dic[key], dtype=np.float32)
+        dic[key] = np.asarray(dic[key])
     return dic

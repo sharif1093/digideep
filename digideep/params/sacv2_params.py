@@ -31,11 +31,11 @@ cpanel = OrderedDict()
 #####################
 ### Runner Parameters
 # num_frames = 10e6  # Number of frames to train
-cpanel["epoch_size"]    = 400  # cycles
-cpanel["number_epochs"] = 10000
-cpanel["test_activate"] = True # Test Activate
+cpanel["number_epochs"] = 1000  # epochs
+cpanel["epoch_size"]    = 1000  # cycles
+cpanel["test_activate"] = True  # Test activated
 cpanel["test_interval"] = 10    # Test Interval Every #n Epochs
-cpanel["test_win_size"] = 5     # Number of episodes to run test.
+cpanel["test_win_size"] = 10    # Number of episodes to run test.
 cpanel["save_interval"] = 10    # Save Interval Every #n Epochs
 
 cpanel["seed"] = 0
@@ -73,17 +73,18 @@ cpanel["gamma"] = 0.99     # The gamma parameter used in VecNormalize | Agent.pr
 ##################################
 ### Exploration/Exploitation Balance
 ### Exploration (~ num_workers * n_steps)
-cpanel["num_workers"] = 1  # From Explorer           # Number of exploratory workers working together
-cpanel["n_steps"] = 1      # From Explorer           # Number of frames to produce
+cpanel["num_workers"] = 1     # From Explorer           # Number of exploratory workers working together
+cpanel["n_steps"] = 1         # From Explorer           # Number of frames to produce
 ### Exploitation (~ n_update * batch_size)
-cpanel["n_update"] = 1     # From Agents: Updates per step
-cpanel["batch_size"] = 256 # From Agents
+cpanel["n_update"] = 1        # From Agents: Updates per step
+cpanel["batch_size"] = 256    # From Agents
 cpanel["warm_start"] = 10000
 
 #####################
 ### Agents Parameters
-cpanel["lr_critic"] = 0.0003
-cpanel["lr_actor"]  = 0.0003
+cpanel["agent_type"] = "digideep.agent.sacv2.Agent"
+cpanel["lr_critic"] = 3e-4
+cpanel["lr_actor"]  = 3e-4
 
 # cpanel["eps"] = 1e-5 # Epsilon parameter used in the optimizer(s) (ADAM/RMSProp/...)
 
@@ -195,7 +196,7 @@ def gen_params(cpanel):
     ##################
     params["agents"]["agent"] = {}
     params["agents"]["agent"]["name"] = "agent"
-    params["agents"]["agent"]["type"] = "digideep.agent.sacv2.Agent"
+    params["agents"]["agent"]["type"] = cpanel["agent_type"]
     params["agents"]["agent"]["observation_path"] = cpanel["observation_key"]
     params["agents"]["agent"]["methodargs"] = {}
     params["agents"]["agent"]["methodargs"]["n_update"] = cpanel["n_update"]  # Number of times to perform PPO update. Alternative name: PPO_EPOCH
@@ -213,9 +214,9 @@ def gen_params(cpanel):
 
     ################
     params["agents"]["agent"]["sampler_list"] = ["digideep.agent.ddpg.sampler.sampler_re"]
-    params["agents"]["agent"]["sampler_args"] = {"agent_name": params["agents"]["agent"]["name"],
-                                                 "batch_size": cpanel["batch_size"],
-                                                 "observation_path": params["agents"]["agent"]["observation_path"]
+    params["agents"]["agent"]["sampler_args"] = {"agent_name":params["agents"]["agent"]["name"],
+                                                 "batch_size":cpanel["batch_size"],
+                                                 "observation_path":params["agents"]["agent"]["observation_path"]
                                                 }
 
     # # It deletes the last element from the chunk
@@ -261,12 +262,9 @@ def gen_params(cpanel):
     ### Memory ###
     ##############
     params["memory"] = {}
-
     params["memory"]["train"] = {}
-    # Number of samples in a chunk
-    params["memory"]["train"]["chunk_sample_len"] = cpanel["n_steps"] # params["env"]["config"]["max_episode_steps"]
-    # Number of chunks in the buffer:
-    params["memory"]["train"]["buffer_chunk_len"] = cpanel["memory_size_in_chunks"]
+    params["memory"]["train"]["type"] = "digideep.memory.ringbuffer.Memory"
+    params["memory"]["train"]["args"] = {"chunk_sample_len":cpanel["n_steps"], "buffer_chunk_len":cpanel["memory_size_in_chunks"], "overrun":1}
     ##############################################
 
     
@@ -286,10 +284,10 @@ def gen_params(cpanel):
     params["explorer"]["train"]["deterministic"] = False # MUST: Takes random actions
     params["explorer"]["train"]["n_steps"] = cpanel["n_steps"] # Number of steps to take a step in the environment
     params["explorer"]["train"]["n_episodes"] = None # Do not limit # of episodes
-    params["explorer"]["train"]["win_size"] = 10 # Number of episodes to episode reward for report
+    params["explorer"]["train"]["win_size"] = 20 # Number of episodes to episode reward for report
     params["explorer"]["train"]["render"] = False
     params["explorer"]["train"]["render_delay"] = 0
-    params["explorer"]["train"]["seed"] = cpanel["seed"] # + 3500
+    params["explorer"]["train"]["seed"] = cpanel["seed"] + 90
     params["explorer"]["train"]["extra_env_kwargs"] = {}
 
     params["explorer"]["test"] = {}

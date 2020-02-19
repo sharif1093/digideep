@@ -36,11 +36,12 @@ class Policy(PolicyBase):
         state_size  = self.params["obs_space"]["dim"][0]
         action_size = self.params["act_space"]["dim"] if np.isscalar(self.params["act_space"]["dim"]) else self.params["act_space"]["dim"][0]
         action_gain = self.params["act_space"]["lim"][1][0]
+        hidden_size = self.params['hidden_size']
 
-        self.model["actor"] = ActorModel(state_size=state_size, action_size=action_size, action_gain=action_gain, **self.params["actor_args"])
+        self.model["actor"] = ActorModel(state_size=state_size, action_size=action_size, action_gain=action_gain, hidden_size=hidden_size, **self.params["actor_args"])
         self.model["actor_target"] = deepcopy(self.model["actor"])
 
-        self.model["critic"] = CriticModel(state_size=state_size, action_size=action_size, **self.params["critic_args"])
+        self.model["critic"] = CriticModel(state_size=state_size, action_size=action_size, hidden_size=hidden_size, **self.params["critic_args"])
         self.model["critic_target"] = deepcopy(self.model["critic"])
 
         self.averager = {}
@@ -99,21 +100,21 @@ class CriticModel(nn.Module):
         # init_ = init_easy()
         # self.bn1 = nn.BatchNorm1d(num_features=self.params['state_size'])
 
-        self.fcs1 = nn.Linear(self.params['state_size'], 256)
+        self.fcs1 = nn.Linear(self.params['state_size'], self.params["hidden_size"])
         self.fcs1.weight.data = fanin_init(self.fcs1.weight.data)
 
-        self.fcs2 = nn.Linear(256,128)
+        self.fcs2 = nn.Linear(self.params["hidden_size"], int(self.params["hidden_size"]/2))
         self.fcs2.weight.data = fanin_init(self.fcs2.weight.data)
 
-        self.fca1 = nn.Linear(self.params['action_size'], 128)
+        self.fca1 = nn.Linear(self.params['action_size'], (self.params["hidden_size"]-int(self.params["hidden_size"]/2)))
         self.fca1.weight.data = fanin_init(self.fca1.weight.data)
 
         # self.fc2 = nn.Linear(256,256)
-        self.fc2 = nn.Linear(256,128)
+        self.fc2 = nn.Linear(self.params["hidden_size"],self.params["hidden_size"])
         self.fc2.weight.data = fanin_init(self.fc2.weight.data)
         
         # self.fc3 = nn.Linear(256, 1)
-        self.fc3 = nn.Linear(128, 1)
+        self.fc3 = nn.Linear(self.params["hidden_size"], 1)
         self.fc3.weight.data.uniform_(-self.params['eps'], self.params['eps'])
 
     def forward(self, state, action):
@@ -155,19 +156,19 @@ class ActorModel(nn.Module):
 
         # self.bn1 = nn.BatchNorm1d(num_features=self.params['state_size'])
 
-        self.fc1 = nn.Linear(self.params['state_size'], 256)
+        self.fc1 = nn.Linear(self.params['state_size'], self.params["hidden_size"])
         self.fc1.weight.data = fanin_init(self.fc1.weight.data)
 
         # self.fc2 = nn.Linear(256,256)
-        self.fc2 = nn.Linear(256,128)
+        self.fc2 = nn.Linear(self.params["hidden_size"],self.params["hidden_size"])
         self.fc2.weight.data = fanin_init(self.fc2.weight.data)
 
         # self.fc3 = nn.Linear(256,256)
-        self.fc3 = nn.Linear(128,64)
+        self.fc3 = nn.Linear(self.params["hidden_size"],self.params["hidden_size"])
         self.fc3.weight.data = fanin_init(self.fc3.weight.data)
 
         # self.fc4 = nn.Linear(256, self.params['action_size'])
-        self.fc4 = nn.Linear(64, self.params['action_size'])
+        self.fc4 = nn.Linear(self.params["hidden_size"], self.params['action_size'])
         self.fc4.weight.data.uniform_(-self.params['eps'], self.params['eps'])
         self.tanh = nn.Tanh()
 
