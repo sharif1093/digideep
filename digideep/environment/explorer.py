@@ -61,6 +61,7 @@ class Explorer:
     def __init__(self, session, agents=None, **params):
         self.agents = agents
         self.params = params
+        self.session = session
 
         # Create models
         extra_env_kwargs = self.params.get("extra_env_kwargs", {})
@@ -124,7 +125,9 @@ class Explorer:
                     self.state["n_episode"] += 1
                     
                     self.monitor_n_episode()
+
                     monitor("/reward/"+self.params["mode"]+"/episodic", rew, window=self.params["win_size"])
+                    self.session.writer.add_scalar('reward/'+self.params["mode"], rew)
 
     def close(self):
         """It closes all environments.

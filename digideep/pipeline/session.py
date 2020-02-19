@@ -142,6 +142,7 @@ class Session(object):
         self.state['path_checkpoints'] = os.path.join(self.state['path_session'], 'checkpoints')
         self.state['path_monitor']     = os.path.join(self.state['path_session'], 'monitor')
         self.state['path_videos']      = os.path.join(self.state['path_session'], 'videos')
+        self.state['path_tensorboard'] = os.path.join(self.state['path_session'], 'tensorboard')
         # Hyper-parameters basically is a snapshot of intial parameter engine's state.
         self.state['file_cpanel'] = os.path.join(self.state['path_session'], 'cpanel.json')
         self.state['file_params'] = os.path.join(self.state['path_session'], 'params.yaml')
@@ -161,8 +162,8 @@ class Session(object):
         self.initLogger()
         self.initVarlog()
         self.initProlog()
-        if self.args["visdom"]:
-            self.initVisdom()
+        self.initTensorboard()
+        self.initVisdom()
         # TODO: We don't need the "SaaM" when are loading from a checkpoint.
         # if not self.is_playing:
         if not self.is_loading:
@@ -202,6 +203,30 @@ class Session(object):
             profiler.set_output_file(self.state['file_prolog'])
         KeepTime.set_level(self.args["profiler_level"])
     
+    def initTensorboard(self):
+        """
+        Will initialize the SummaryWriter for tensorboard logging.
+        
+        Link: https://pytorch.org/docs/stable/tensorboard.html
+        """
+        from torch.utils.tensorboard import SummaryWriter
+        self.writer = SummaryWriter(log_dir=self.state['path_tensorboard'])
+
+        if self.args["tensorboard"]:
+            # Run a dedicated Tensorboard server:
+            from tensorboard import program
+            tb = program.TensorBoard()
+            tb.configure(argv=[None, '--logdir', self.state['path_tensorboard']])
+            url = tb.launch()
+            logger.warn("Access Tensorboard through: " + str(url))
+        else:
+            # Nullify the attributes so time would not be wasted logging.
+            for attr in dir(self.writer):
+                if attr.startswith("add_") or (attr=="flush") or (attr=="close"):
+                    setattr(self.writer, attr, lambda *args, **kw: None)
+
+        
+
     def initVisdom(self):
         """
         This function initializes the connection to the Visdom server. The Visdom server must be running.
@@ -211,11 +236,12 @@ class Session(object):
 
             visdom -port 8097 &
         """
-        from digideep.utility.visdom_engine.Instance  import VisdomInstance
-        if not self.dry_run:
-            VisdomInstance(port=self.args["visdom_port"], log_to_filename=self.state["file_visdom"], replay=True)
-        else:
-            VisdomInstance(port=self.args["visdom_port"])
+        if self.args["visdom"]:
+            from digideep.utility.visdom_engine.Instance  import VisdomInstance
+            if not self.dry_run:
+                VisdomInstance(port=self.args["visdom_port"], log_to_filename=self.state["file_visdom"], replay=True)
+            else:
+                VisdomInstance(port=self.args["visdom_port"])
 
     def createSaaM(self):
         """ SaaM = Session-as-a-Module
@@ -354,6 +380,8 @@ class Session(object):
         ## Visdom Server
         parser.add_argument('--visdom', action='store_true', help="Whether to use visdom or not!")
         parser.add_argument('--visdom-port', metavar=('<n>'), default=8097, type=int, help="The port of visdom server, it's on 8097 by default.")
+        ## Tensorboard
+        parser.add_argument('--tensorboard', action='store_true', help="Whether to use tensorboard or not!")
         ## Monitor Thread
         parser.add_argument('--monitor-cpu', action="store_true", help="Use to monitor CPU resource statistics on Visdom.")
         parser.add_argument('--monitor-gpu', action="store_true", help="Use to monitor GPU resource statistics on Visdom.")

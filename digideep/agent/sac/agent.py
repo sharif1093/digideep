@@ -192,6 +192,10 @@ class Agent(AgentBase):
         monitor("/update/loss/softq", softq_loss.item())
         monitor("/update/loss/value", value_loss.item())
 
+        self.session.writer.add_scalar('loss/actor', actor_loss.item())
+        self.session.writer.add_scalar('loss/softq', softq_loss.item())
+        self.session.writer.add_scalar('loss/value', value_loss.item())
+
         # for key,item in locals().items():
         #     if isinstance(item, torch.Tensor):
         #         # print("item =", type(item))

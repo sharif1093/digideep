@@ -249,6 +249,10 @@ class Agent(AgentBase):
         monitor("/update/loss/critic1", qf1_loss.item())
         monitor("/update/loss/critic2", qf2_loss.item())
 
+        self.session.writer.add_scalar('loss/actor', actor_loss.item())
+        self.session.writer.add_scalar('loss/critic1', qf1_loss.item())
+        self.session.writer.add_scalar('loss/critic2', qf2_loss.item())
+
         # 'loss/entropy_loss', ent_loss:        alpha_loss.item()
         # 'entropy_temprature/alpha', alpha:    alpha_tlogs.item()
         self.state["i_step"] += 1

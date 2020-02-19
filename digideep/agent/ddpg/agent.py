@@ -186,6 +186,10 @@ class Agent(AgentBase):
 
         monitor("/update/loss_actor", loss_actor.item())
         monitor("/update/loss_critic", loss_critic.item())
+
+        self.session.writer.add_scalar('loss/actor', loss_actor.item())
+        self.session.writer.add_scalar('loss/critic', loss_critic.item())
+
         self.state["i_step"] += 1
 
     def update(self):
