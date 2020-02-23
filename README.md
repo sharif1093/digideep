@@ -69,7 +69,7 @@ Please use the following BibTeX entry to cite this repository in your publicatio
 
 ## License
 
-BSD 2-clause [LICENSE](LICENSE).
+BSD 2-clause.
 
 ## Acknowledgement
 
