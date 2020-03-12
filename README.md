@@ -57,7 +57,13 @@ python -m digideep.main --play --load-checkpoint "<path_to_checkpoint>"
 python -m digideep.environment.play --model "Pendulum-v0"
 ```
 
-See [usage notes](https://digideep.readthedocs.io/en/latest/notes/02%20Usage.html) for more delicate usage information.
+* Listing all available environments using a filter. Example:
+
+```bash
+python -m digideep.environment.play --list-include ".*"
+```
+
+See [usage notes](https://digideep.readthedocs.io/en/latest/notes/02%20Usage.html) for more detailed usage information.
 
 
 ### Sample Results
