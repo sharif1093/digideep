@@ -31,6 +31,9 @@ Follow [instructions](https://digideep.readthedocs.io/en/latest/notes/01%20Insta
 ```bash
 # Running PPO on the 'PongNoFrameskip-v4' environment
 python -m digideep.main --params digideep.params.atari_ppo
+
+# Run with TensorBoard
+python -m digideep.main --params digideep.params.atari_ppo --tensorboard
 ```
 
 * Change a parameter in parameter file from comman-line:
@@ -60,14 +63,14 @@ See [usage notes](https://digideep.readthedocs.io/en/latest/notes/02%20Usage.htm
 Sample results of running SAC on the toy environment Pendulum-v0:
 
 ```bash
-python -m digideep.main --params digideep.params.sac_params
+python -m digideep.main --params digideep.params.sac_params --tensorboard
 ```
 
 <p align="center">
   <img src="./doc/media/sac_pendulum_v0.gif" width="70%">
 </p>
 
-Also the average return vs. episode graph:
+Also, the average return vs. episode graph (saved from TensorBoard):
 
 <p align="center">
   <img src="./doc/media/sac_pendulum_v0.svg" width="70%">
