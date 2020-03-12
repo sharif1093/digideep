@@ -36,12 +36,14 @@ python -m digideep.main --params digideep.params.atari_ppo
 python -m digideep.main --params digideep.params.atari_ppo --tensorboard
 ```
 
-* Change a parameter in parameter file from comman-line:
+* Change a parameter in parameter file from command-line:
 
 ```bash
 # Starting PPO training on 'DMCBenchCheetahRun-v0', instead.
 python -m digideep.main --params digideep.params.mujoco_ppo --cpanel '{"model_name":"DMCBenchCheetahRun-v0"}'
 ```
+
+> Any parameter specified in the `cpanel` section in the parameter file can be altered through command-line.
 
 * Playing a trained policy from a checkpoint. Example:
 
@@ -60,7 +62,7 @@ See [usage notes](https://digideep.readthedocs.io/en/latest/notes/02%20Usage.htm
 
 ### Sample Results
 
-Sample results of running SAC on the toy environment Pendulum-v0:
+Sample results of running `SAC` on the toy environment `Pendulum-v0`:
 
 ```bash
 python -m digideep.main --params digideep.params.sac_params --tensorboard
