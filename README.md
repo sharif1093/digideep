@@ -67,7 +67,11 @@ python -m digideep.main --params digideep.params.sac_params
   <img src="./doc/media/sac_pendulum_v0.gif" width="70%">
 </p>
 
-![Learning plot](./doc/media/sac_pendulum_v0.svg "Average Return vs. Episode")
+Also the average return vs. episode graph:
+
+<p align="center">
+  <img src="./doc/media/sac_pendulum_v0.svg" width="70%">
+</p>
 
 
 ## Changelog
