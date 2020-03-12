@@ -68,12 +68,6 @@ python -m digideep.main --params digideep.params.sac_params
 </p>
 
 
-<div style="width:100%; font-size:80%; text-align:center;">
-  <img src="./doc/media/sac_pendulum_v0.svg" width="70%" style="padding-bottom:0.5em;" />
-  Average Return vs Episode
-</div>
-
-
 ## Changelog
 
 * **_2019-05-20_**: Added Soft Actor-Critic (SAC). Added full support for Dict observation spaces.
