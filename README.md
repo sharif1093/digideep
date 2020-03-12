@@ -64,15 +64,14 @@ python -m digideep.main --params digideep.params.sac_params
 ```
 
 <p align="center">
-  <img src="./doc/media/sac_pendulum_v0.gif" width="640">
+  <img src="./doc/media/sac_pendulum_v0.gif" width="70%">
 </p>
 
-<p align="center">
-  <figure>
-    <img src="./doc/media/sac_pendulum_v0.svg" width="640">
-    <figcaption>Average Return vs Episode</figcaption>
-  </figure>
-</p>
+
+<div style="width:100%; font-size:80%; text-align:center;">
+  <img src="./doc/media/sac_pendulum_v0.svg" width="70%" style="padding-bottom:0.5em;" />
+  Average Return vs Episode
+</div>
 
 
 ## Changelog
