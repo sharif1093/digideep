@@ -8,40 +8,69 @@
 
 ## Introduction
 
-Developers who want to implement a new deep DeepRL algorithm, usually have to write a great amount of boilerplate code or alternatively use 3rd party packages which aim to provide the basics. However, understanding and modifying these 3rd party packages usually is not a trivial task, due to lack of either documentation or code readability/structure.
+Digideep provides a framework for deep reinforcement learning research. Digideep's focus is on code **MODULARITY** and **REUSABILITY**.
 
-Digideep tries to provide a well-documented complete pipeline for deep reinforcement learning problems, so that developers can jump directly to implementing their methods. Special attention has been paid to **decoupling** different components as well as making them **modular**.
+**Specifications**:
 
-In Digideep, [OpenAI's Gym](https://github.com/openai/gym) and [Deepmind's dm_control](https://github.com/deepmind/dm_control) co-exist and can be used with the same interface. Thanks to decoupled simulation and training parts, both [TensorFlow ](https://www.tensorflow.org/) and [PyTorch](https://github.com/pytorch/pytorch) can be used to train the agents (however, the example methods in this code repository are implemented using PyTorch).
+* Compatible with [OpenAI Gym](https://github.com/openai/gym) and [Deepmind dm_control](https://github.com/deepmind/dm_control).
+* Using PyTorch as Neural Network (TensorFlow can be used quite easily due to modularity.)
+* Implementation of three RL methods: [DDPG](https://arxiv.org/abs/1509.02971), [SAC](https://arxiv.org/abs/1801.01290), and [PPO](https://arxiv.org/abs/1707.06347).
 
-Currently, the following methods are implemented in Digideep:
+See documentation at https://digideep.readthedocs.io/en/latest/.
 
-* [DDPG](https://arxiv.org/abs/1509.02971) - Deep Deterministic Policy Gradient
-* [SAC](https://arxiv.org/abs/1801.01290) - Soft Actor Critic
-* [PPO](https://arxiv.org/abs/1707.06347) - Proximal Policy Optimization
+## Usage
 
-Digideep is written to be developer-friendly with self-descriptive codes and extensive documentation. It also provides
-some debugging tools and guidelines for implementing new methods.
+### Installation
 
-## Features
+Follow [instructions](https://digideep.readthedocs.io/en/latest/notes/01%20Installation.html).
 
-* Developer-friendly code:
-  * The code is highly readable and fairly easy to understand and modify.
-  * Extensive documentation to support the above.
-  * Written for _modularity_ and code _decoupling_.
-  * Provides _debugging tools_ as an assistance for implementation new methods.
-* Supports single-node multi-cpu multi-gpu architecture.
-* Supports _dictionary observation/action spaces_ for neat communication with environments.
-* Can be used with both `dm_control`/`gym` using the same interface:
-  * Uses `dm_control`'s native viewer for viewing.
-  * Provides batch environments for both `dm_control` and `gym`.
-* Provides a session-as-a-module (SaaM) functionality to easily load saved sessions as a Python module for post-processing.
-* Controls all parameters from a _single `parameter` file_ for transparency and easy control of all parameters from one place.
-* Supports _(de-)serialization_ structurally.
+### Running
 
-## Documentation
+* Start a training session based on a parameter file. Default parameter files are stored in `digideep/params`. Example:
 
-Please visit https://digideep.readthedocs.io/en/latest/ for documentation.
+```bash
+# Running PPO on the 'PongNoFrameskip-v4' environment
+python -m digideep.main --params digideep.params.atari_ppo
+```
+
+* Change a parameter in parameter file from comman-line:
+
+```bash
+# Starting PPO training on 'DMCBenchCheetahRun-v0', instead.
+python -m digideep.main --params digideep.params.mujoco_ppo --cpanel '{"model_name":"DMCBenchCheetahRun-v0"}'
+```
+
+* Playing a trained policy from a checkpoint. Example:
+
+```bash
+python -m digideep.main --play --load-checkpoint "<path_to_checkpoint>"
+```
+
+* Visualizing an environment:
+
+```bash
+python -m digideep.environment.play --model "Pendulum-v0"
+```
+
+See [usage notes](https://digideep.readthedocs.io/en/latest/notes/02%20Usage.html) for more delicate usage information.
+
+
+### Sample Results
+
+Sample results of running SAC on the toy environment Pendulum-v0:
+
+```bash
+python -m digideep.main --params digideep.params.sac_params
+```
+
+<p align="center">
+  <img src="./doc/media/sac_pendulum_v0.gif" width="640">
+</p>
+
+<p align="center">
+  <img src="./doc/media/sac_pendulum_v0.svg" width="640">
+</p>
+
 
 ## Changelog
 

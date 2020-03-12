@@ -127,7 +127,7 @@ class Explorer:
                     self.monitor_n_episode()
 
                     monitor("/reward/"+self.params["mode"]+"/episodic", rew, window=self.params["win_size"])
-                    self.session.writer.add_scalar('reward/'+self.params["mode"], rew)
+                    self.session.writer.add_scalar('reward/'+self.params["mode"], rew, self.state["n_episode"])
 
     def close(self):
         """It closes all environments.

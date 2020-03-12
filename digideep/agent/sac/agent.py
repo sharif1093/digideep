@@ -165,7 +165,7 @@ class Agent(AgentBase):
             value_loss = self.criterion["value"](expected_value, next_value.detach())
 
             log_prob_target = expected_new_q_value - expected_value
-            # TODO: Apperantly the calculation of actor_loss is problematic: none of its ingredients have gradients! So backprop does nothing.
+            # TODO: Apparently the calculation of actor_loss is problematic: none of its ingredients have gradients! So backprop does nothing.
             actor_loss = (log_prob * (log_prob - log_prob_target).detach()).mean()
             
             mean_loss = float(self.params["methodargs"]["mean_lambda"]) * mean.pow(2).mean()
@@ -192,9 +192,9 @@ class Agent(AgentBase):
         monitor("/update/loss/softq", softq_loss.item())
         monitor("/update/loss/value", value_loss.item())
 
-        self.session.writer.add_scalar('loss/actor', actor_loss.item())
-        self.session.writer.add_scalar('loss/softq', softq_loss.item())
-        self.session.writer.add_scalar('loss/value', value_loss.item())
+        self.session.writer.add_scalar('loss/actor', actor_loss.item(), self.state["i_step"])
+        self.session.writer.add_scalar('loss/softq', softq_loss.item(), self.state["i_step"])
+        self.session.writer.add_scalar('loss/value', value_loss.item(), self.state["i_step"])
 
         # for key,item in locals().items():
         #     if isinstance(item, torch.Tensor):

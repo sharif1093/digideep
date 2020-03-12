@@ -83,7 +83,7 @@ cpanel["warm_start"] = 0
 #####################
 ### Agents Parameters
 cpanel["agent_type"] = "digideep.agent.ddpg.Agent"
-cpanel["lr_actor"] = 0.001  # 0.0001
+cpanel["lr_actor"] = 0.0001 # 0.0001
 cpanel["lr_critic"] = 0.001 # 0.001
 cpanel["eps"] = 1e-5 # Epsilon parameter used in the optimizer(s) (ADAM/RMSProp/...)
 
