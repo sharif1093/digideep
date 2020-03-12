@@ -68,7 +68,10 @@ python -m digideep.main --params digideep.params.sac_params
 </p>
 
 <p align="center">
-  <img src="./doc/media/sac_pendulum_v0.svg" width="640">
+  <figure>
+    <img src="./doc/media/sac_pendulum_v0.svg" width="640">
+    <figcaption>Average Return vs Episode</figcaption>
+  </figure>
 </p>
 
 
