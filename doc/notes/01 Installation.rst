@@ -7,13 +7,8 @@ Requirements
 
 * Python 3
 * `PyTorch <https://pytorch.org/>`_ 
-* [OPTIONAL] `Tensorboard <https://github.com/facebookresearch/visdom>`_.
+* [OPTIONAL] `Tensorboard <https://www.tensorflow.org/tensorboard>`_.
 * `MuJoCo <https://www.roboti.us/index.html>`_ ``v200``.
-
-.. code-block:: bash
-
-    pip install --user --upgrade tb-nightly
-
 * `mujoco_py <https://github.com/openai/mujoco-py>`_ and `Gym <https://github.com/openai/gym>`_.
 * `dm_control <https://github.com/deepmind/dm_control>`_.
 
