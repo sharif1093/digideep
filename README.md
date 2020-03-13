@@ -13,8 +13,8 @@ Digideep provides a framework for deep reinforcement learning research. Digideep
 **Specifications**:
 
 * Compatible with [OpenAI Gym](https://github.com/openai/gym) and [Deepmind dm_control](https://github.com/deepmind/dm_control).
-* Using PyTorch as Neural Network (TensorFlow can be used quite easily due to modularity.)
-* Implementation of three RL methods: [DDPG](https://arxiv.org/abs/1509.02971), [SAC](https://arxiv.org/abs/1801.01290), and [PPO](https://arxiv.org/abs/1707.06347).
+* [PyTorch](https://pytorch.org/) for modeling neural networks.
+* Three RL methods already implemented: [DDPG](https://arxiv.org/abs/1509.02971), [SAC](https://arxiv.org/abs/1801.01290), and [PPO](https://arxiv.org/abs/1707.06347).
 
 See documentation at https://digideep.readthedocs.io/en/latest/.
 
