@@ -70,13 +70,13 @@ See [usage notes](https://digideep.readthedocs.io/en/latest/notes/02%20Usage.htm
 
 ```bash
 # Running "SAC" on the default "Pendulum" environment:
-$ python -m digideep.main --params digideep.params.sac_params --tensorboard
+python -m digideep.main --params digideep.params.sac_params --tensorboard
 
 # Running "PPO" on "PongNoFrameskip-v4" environment:
-$ python -m digideep.main --params digideep.params.atari_ppo --tensorboard
+python -m digideep.main --params digideep.params.atari_ppo --tensorboard
 
 # Running `PPO` on dm_control's `DMBenchCheetahRun-v0` environment:
-$ python -m digideep.main --params digideep.params.mujoco_ppo --cpanel '{"model_name":"DMBenchCheetahRun-v0", "from_module":"digideep.environment.dmc2gym"}' --tensorboard
+python -m digideep.main --params digideep.params.mujoco_ppo --cpanel '{"model_name":"DMBenchCheetahRun-v0", "from_module":"digideep.environment.dmc2gym"}' --tensorboard
 
 ```
 
