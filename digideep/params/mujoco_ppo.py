@@ -48,7 +48,7 @@ cpanel["memory_size_in_chunks"] = int(1) # SHOULD be 1 for on-policy methods tha
 # 'HalfCheetah-v2'
 # 'DMBenchHumanoidStand-v0' | 'DMBenchCheetahRun-v0' | 'Ant-v2'
 cpanel["model_name"] = 'Ant-v2'  # MuJoCo Env
-# cpanel["from_module"] = 'digideep.environment.dmc2gym'
+# cpanel["from_module"] = "digideep.environment.dmc2gym"
 cpanel["observation_key"] = "/agent"
 
 # cpanel["model_name"] = 'Pendulum-v0'        # Classic Control Env

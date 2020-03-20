@@ -195,10 +195,10 @@ class Agent(AgentBase):
                 monitor("/update/action_loss", action_loss.item())
                 monitor("/update/dist_entropy", dist_entropy.item())
 
-                self.session.writer.add_scalar('loss/overall', Loss.item())
-                self.session.writer.add_scalar('loss/value', value_loss.item())
-                self.session.writer.add_scalar('loss/action', action_loss.item())
-                self.session.writer.add_scalar('loss/dist_entropy', dist_entropy.item())
+                self.session.writer.add_scalar('loss/overall', Loss.item(), self.state["i_step"])
+                self.session.writer.add_scalar('loss/value', value_loss.item(), self.state["i_step"])
+                self.session.writer.add_scalar('loss/action', action_loss.item(), self.state["i_step"])
+                self.session.writer.add_scalar('loss/dist_entropy', dist_entropy.item(), self.state["i_step"])
                 
                 ## Candidates for monitoring
                 # ratio.item()

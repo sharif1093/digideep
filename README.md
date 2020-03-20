@@ -68,21 +68,25 @@ See [usage notes](https://digideep.readthedocs.io/en/latest/notes/02%20Usage.htm
 
 ### Sample Results
 
-Sample results of running `SAC` on the toy environment `Pendulum-v0`:
-
 ```bash
+# Running "SAC" on the default "Pendulum" environment:
 python -m digideep.main --params digideep.params.sac_params --tensorboard
+
+# Running "PPO" on "PongNoFrameskip-v4" environment:
+python3 -m digideep.main --params digideep.params.atari_ppo --tensorboard
+
+# Running `PPO` on dm_control's `DMBenchCheetahRun-v0` environment:
+python3 -m digideep.main --params digideep.params.mujoco_ppo --cpanel '{"model_name":"DMBenchCheetahRun-v0", "from_module":"digideep.environment.dmc2gym"}' --tensorboard
+
 ```
 
-<p align="center">
-  <img src="./doc/media/sac_pendulum_v0.gif" width="70%">
-</p>
 
-Also, the average return vs. episode graph (saved from TensorBoard):
 
-<p align="center">
-  <img src="./doc/media/sac_pendulum_v0.svg" width="70%">
-</p>
+| Learning Graph           |  Trained Policy |
+:-------------------------:|:-------------------------:
+<img src="./doc/media/sac_pendulum_v0.svg" width="40%" /> | <img src="./doc/media/sac_pendulum_v0.gif" width="40%" />
+<img src="./doc/media/ppo_atari_pong.svg" width="40%" />  | <img src="./doc/media/ppo_atari_pong.gif" width="40%" />
+<img src="./doc/media/ppo_dm_cheetah.svg" width="40%" />  | <img src="./doc/media/ppo_dm_cheetah.gif" width="40%" />
 
 
 ## Changelog
