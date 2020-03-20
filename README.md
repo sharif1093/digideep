@@ -84,9 +84,9 @@ python3 -m digideep.main --params digideep.params.mujoco_ppo --cpanel '{"model_n
 
 | Learning Graph           |  Trained Policy |
 :-------------------------:|:-------------------------:
-<img src="./doc/media/sac_pendulum_v0.svg" width="40%"> | <img src="./doc/media/sac_pendulum_v0.gif" width="40%">
-<img src="./doc/media/ppo_atari_pong.svg" width="40%">  | <img src="./doc/media/ppo_atari_pong.gif" width="40%">
-<img src="./doc/media/ppo_dm_cheetah.svg" width="40%">  | <img src="./doc/media/ppo_dm_cheetah.gif" width="40%">
+<img src="./doc/media/sac_pendulum_v0.svg" width="60%"> | <img src="./doc/media/sac_pendulum_v0.gif" width="40%">
+<img src="./doc/media/ppo_atari_pong.svg" width="60%">  | <img src="./doc/media/ppo_atari_pong.gif" width="40%">
+<img src="./doc/media/ppo_dm_cheetah.svg" width="60%">  | <img src="./doc/media/ppo_dm_cheetah.gif" width="40%">
 
 
 ## Changelog
