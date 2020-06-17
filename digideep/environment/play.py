@@ -23,10 +23,15 @@ if __name__=="__main__":
     parser.add_argument('--runs', metavar=('<n>'), default=5, type=int, help="The number of times to run the simulation.")
     parser.add_argument('--n-step', metavar=('<n>'), default=1024, type=int, help="The number of timesteps to run each episode.")
     parser.add_argument('--delay', metavar=('<ms>'), default=0, type=int, help="The time in milliseconds to delay in each timestep to make simulation slower.")
+    parser.add_argument('--glfw', action='store_true', help="If you want to initialize glfw yourself.")
 
     parser.add_argument('--no-action', action="store_true", help="The number of timesteps to run each episode.")
     args = parser.parse_args()
 
+    if args.glfw:
+        import glfw
+        glfw.init()
+        
     if args.module:
         get_module(args.module)
 
