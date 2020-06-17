@@ -26,7 +26,7 @@ def make_unique_path_session(path_base_session, prefix="session_"):
     except FileExistsError as e:
         return make_unique_path_session(path_base_session=path_base_session, prefix=prefix)
 
-
+writers = []
 
 class Session(object):
     """
@@ -71,7 +71,14 @@ class Session(object):
     Todo:
       If restoring a session, ``visdom.log`` should be copied from there and replayed.
     
-    
+
+                                         play    loading    dry-run    implemented
+    -----------------------------------------------------------------------------
+    Train                                 0         0          0            1
+    Train from a checkpoint               0         1          0            0
+    Play (policy initialized)             1         0         0/1           1
+    Play (policy loaded from checkpoint)  1         1         0/1           1
+
     """
     def __init__(self, root_path):
         self.parse_arguments()
@@ -85,19 +92,13 @@ class Session(object):
         #       from the previous path to the current one.
         self.is_loading = True if self.args["load_checkpoint"] else False
         self.is_playing = True if self.args["play"] else False
-        
-        # TODO: Should we check the following? We don't need to actually since it can be used with dry_run mode.
-        # if self.is_playing:
-        #     assert self.is_loading, "For playing the checkpoint path should be specified using `--load-checkpoint`."
-        
+                
         # TODO: Change the path for loading the packages?
         # sys.path.insert(0, '/path/to/whatever')
 
         if self.args["monitor_cpu"] or self.args["monitor_gpu"]:
             # Force visdom ON if "--monitor-cpu" or "--monitor-gpu" are provided.
             self.args["visdom"] = True
-
-            
 
         self.state = {}
         # Root: Indicates where we are right now
@@ -211,12 +212,15 @@ class Session(object):
         """
         from torch.utils.tensorboard import SummaryWriter
         self.writer = SummaryWriter(log_dir=self.state['path_tensorboard'])
+        
+        # Put it here for global access to tensorboard!
+        writers.append(self.writer)
 
         if self.args["tensorboard"]:
             # Run a dedicated Tensorboard server:
             from tensorboard import program
             tb = program.TensorBoard()
-            tb.configure(argv=[None, '--logdir', self.state['path_tensorboard']])
+            tb.configure(argv=[None, '--bind_all', '--logdir', self.state['path_tensorboard']])
             url = tb.launch()
             logger.warn("Access Tensorboard through: " + str(url))
         else:
