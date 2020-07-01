@@ -8,6 +8,7 @@ from gym.utils import seeding
 from gym.utils import EzPickle
 
 import numpy as np
+import random
 import collections
 import sys
 import copy
@@ -123,6 +124,7 @@ class DmControlWrapper(Env, EzPickle):
     def seed(self, seed=None):
         """Seeds the environment.
         """
+        random.seed(seed) # OK??
         np.random.seed(seed)
         self.np_random, seed = seeding.np_random(seed)
         self.dmcenv.task._random = self.np_random
