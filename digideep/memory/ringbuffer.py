@@ -179,6 +179,7 @@ class Memory:
                 size = getsizeof(self.buffer[key]) / 1024. / 1024.
                 logger.warn("Dictionary entry [{}] added (type: {:s}, size: {:9.1f} MB)".format(key,  str(dtype), size))
             
+            # TODO: Check the shape of new data and complain if not consistent.
             self.buffer[key][:,new_index_list] = chunk[key]
             # # TODO: Fix it for integer types!
             # if np.issubdtype(dtype, np.floating):
