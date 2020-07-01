@@ -197,6 +197,18 @@ class MakeEnvironment:
             if stack[index]["enabled"]:
                 wrapper_class = get_class(stack[index]["name"])
                 # We pass mode to the wrapper as well, so the wrapper can adjust itself.
+                if "request_for_args" in stack[index]:
+                    for rfa in stack[index]["request_for_args"]:
+                        logger("  Adding argument {} to the wrapper {}".format(rfa, stack[index]["name"]))
+                        if rfa == "session":
+                            stack[index]["args"]["session"] = self.session
+                        # TODO: Move the "mode" to optional parameter that can be requested!
+                        # elif rfa == "mode":
+                        #     stack[index]["args"]["mode"] = self.mode
+                        else:
+                            logger.fatal("  Argument {} not found!".format(rfa))
+                            exit()
+                
                 env = wrapper_class(env, mode=self.mode, **stack[index]["args"])
         return env
 
