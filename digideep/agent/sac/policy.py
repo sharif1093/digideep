@@ -42,13 +42,19 @@ class Policy(PolicyBase):
 
         state_size  = self.params["obs_space"]["dim"][0]
         action_size = self.params["act_space"]["dim"] if np.isscalar(self.params["act_space"]["dim"]) else self.params["act_space"]["dim"][0]
-        hidden_size = self.params["hidden_size"]
+        
+        if "hidden_size" in self.params:
+            hidden_size = self.params["hidden_size"]
+            self.model["value"] = ValueNetwork(state_size, hidden_size, **self.params["value_args"])
+            self.model["value_target"] = deepcopy(self.model["value"])
+            self.model["softq"] = SoftQNetwork(state_size, action_size, hidden_size, **self.params["softq_args"])
+            self.model["actor"] = ActorNetwork(state_size, action_size, hidden_size, **self.params["actor_args"])
+        else:
+            self.model["value"] = ValueNetwork(state_size, **self.params["value_args"])
+            self.model["value_target"] = deepcopy(self.model["value"])
+            self.model["softq"] = SoftQNetwork(state_size, action_size, **self.params["softq_args"])
+            self.model["actor"] = ActorNetwork(state_size, action_size, **self.params["actor_args"])
 
-        self.model["value"] = ValueNetwork(state_size, hidden_size, **self.params["value_args"])
-        self.model["value_target"] = deepcopy(self.model["value"])
-
-        self.model["softq"] = SoftQNetwork(state_size, action_size, hidden_size, **self.params["softq_args"])
-        self.model["actor"] = ActorNetwork(state_size, action_size, hidden_size, **self.params["actor_args"])
 
         self.averager = {}
         self.averager["value"] = Averager(self.model["value"], self.model["value_target"], **self.params["average_args"])
