@@ -1,5 +1,6 @@
-import os, datetime, argparse
+import os, sys, datetime, argparse
 from shutil import copytree, copyfile, ignore_patterns
+import pipes
 
 from digideep.utility.logging import logger
 from digideep.utility.toolbox import dump_dict_as_json, dump_dict_as_yaml, get_module
@@ -139,6 +140,8 @@ class Session(object):
                 self.state['path_session'] = make_unique_path_session(self.state['path_base_sessions'], prefix="session_")
         else:
             self.state['path_session'] = os.path.join(self.state['path_base_sessions'], "no_session")
+        
+        self.state['session_name'] = os.path.split(self.state['path_session'])[-1]
 
         self.state['path_checkpoints'] = os.path.join(self.state['path_session'], 'checkpoints')
         self.state['path_monitor']     = os.path.join(self.state['path_session'], 'monitor')
@@ -159,7 +162,6 @@ class Session(object):
             os.makedirs(self.state['path_monitor'])
         
         
-        self.set_device()
         self.initLogger()
         self.initVarlog()
         self.initProlog()
@@ -171,6 +173,7 @@ class Session(object):
             self.createSaaM()
         #################
         self.runMonitor() # Monitor CPU/GPU/RAM
+        self.set_device()
 
         # Check valid params file:
         if not self.is_loading:
@@ -187,6 +190,8 @@ class Session(object):
         else:
             print(':: This session has no footprints. Use without `--dry-run` to store results.')
 
+    def finalize(self):
+         pass
     def initLogger(self):
         """
         This function sets the logger level and file.
@@ -227,9 +232,7 @@ class Session(object):
             # Nullify the attributes so time would not be wasted logging.
             for attr in dir(self.writer):
                 if attr.startswith("add_") or (attr=="flush") or (attr=="close"):
-                    setattr(self.writer, attr, lambda *args, **kw: None)
-
-        
+                    setattr(self.writer, attr, lambda *args, **kw: None)    
 
     def initVisdom(self):
         """
@@ -284,6 +287,13 @@ class Session(object):
             sv = StatVizdom(monitor_cpu=self.args["monitor_cpu"], monitor_gpu=self.args["monitor_gpu"])
             sv.start()
 
+    
+    def update_params(self, params):
+        params['session_name'] = self.state['session_name']
+        params['session_msg'] = self.args['msg']
+        params['session_cmd'] = 'python ' + ' '.join(pipes.quote(x) for x in sys.argv)
+        return params
+
     def dump_cpanel(self, cpanel):
         if self.dry_run:
             return
@@ -292,7 +302,7 @@ class Session(object):
         if self.dry_run:
             return
         dump_dict_as_yaml(self.state['file_params'], params)
-    
+
     def set_device(self):
         ## CPU
         # Sets the number of OpenMP threads used for parallelizing CPU operations
@@ -381,11 +391,12 @@ class Session(object):
         parser.add_argument('--save-modules', metavar=('<path>'), default=[], nargs='+', type=str, help="The modules to be stored in the session.")
         parser.add_argument('--log-level', metavar=('<n>'), default=1, type=int, help="The logging level: 0 (debug and above), 1 (info and above), 2 (warn and above), 3 (error and above), 4 (fatal and above)")
         parser.add_argument('--profiler-level', metavar=('<n>'), default=-1, type=int, help="Profiler level. '-1' profiles all level. Default: '-1'")
+        parser.add_argument('--msg',  metavar=('<msg>'), default='', type=str, help="A message describing the current simulation and its significance.")
         ## Visdom Server
         parser.add_argument('--visdom', action='store_true', help="Whether to use visdom or not!")
         parser.add_argument('--visdom-port', metavar=('<n>'), default=8097, type=int, help="The port of visdom server, it's on 8097 by default.")
         ## Tensorboard
-        parser.add_argument('--tensorboard', action='store_true', help="Whether to use tensorboard or not!")
+        parser.add_argument('--tensorboard', action='store_true', help="Whether to use Tensorboard or not!")
         ## Monitor Thread
         parser.add_argument('--monitor-cpu', action="store_true", help="Use to monitor CPU resource statistics on Visdom.")
         parser.add_argument('--monitor-gpu', action="store_true", help="Use to monitor GPU resource statistics on Visdom.")
