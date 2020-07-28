@@ -118,14 +118,13 @@ class DmControlWrapper(Env, EzPickle):
         Returns:
             float: The control timestep of the environment.
         """
-
         return self.dmcenv.control_timestep()
 
     def seed(self, seed=None):
         """Seeds the environment.
         """
-        random.seed(seed) # OK??
-        np.random.seed(seed)
+        # random.seed(seed) # OK??
+        # np.random.seed(seed)
         self.np_random, seed = seeding.np_random(seed)
         self.dmcenv.task._random = self.np_random
         return [seed]
