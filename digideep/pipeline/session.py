@@ -1,6 +1,9 @@
 import os, sys, datetime, argparse
 from shutil import copytree, copyfile, ignore_patterns
 import pipes
+import subprocess
+import threading
+import time
 
 from digideep.utility.logging import logger
 from digideep.utility.toolbox import dump_dict_as_json, dump_dict_as_yaml, get_module
@@ -26,6 +29,31 @@ def make_unique_path_session(path_base_session, prefix="session_"):
         return path_session
     except FileExistsError as e:
         return make_unique_path_session(path_base_session=path_base_session, prefix=prefix)
+
+
+class ParCommand(threading.Thread):
+    def __init__(self, command, logger):
+        self.stdout = None
+        self.stderr = None
+        self.command = command
+        self.logger = logger
+        threading.Thread.__init__(self)
+    def run(self):
+        t = time.time()
+        p = subprocess.Popen(self.command,
+                             shell=False,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        self.stdout, self.stderr = p.communicate()
+        p.wait()
+        # self.logger.warn(" Thread '", " ".join(self.command), "' is over with exit code = ", p.returncode, " in ",time.time()-t," seconds.", sep="")
+        self.logger.warn("Command: '{}' is over with exit code: {} in {:6.2f} seconds".format(" ".join(self.command),
+                                                                                             p.returncode,
+                                                                                             time.time()-t))
+                        
+        # t.wait()
+        # t.poll()
+
 
 writers = []
 
@@ -73,12 +101,12 @@ class Session(object):
       If restoring a session, ``visdom.log`` should be copied from there and replayed.
     
 
-                                         play    loading    dry-run    implemented
-    -----------------------------------------------------------------------------
-    Train                                 0         0          0            1
-    Train from a checkpoint               0         1          0            0
-    Play (policy initialized)             1         0         0/1           1
-    Play (policy loaded from checkpoint)  1         1         0/1           1
+                                         play    resume    loading    dry-run    implemented
+    ----------------------------------------------------------------------------------------
+    Train                                 0         0         0          0            1
+    Train from a checkpoint               0         1         1          0            0
+    Play (policy initialized)             1         0         0         0/1           1
+    Play (policy loaded from checkpoint)  1         0         1         0/1           1
 
     """
     def __init__(self, root_path):
@@ -93,24 +121,34 @@ class Session(object):
         #       from the previous path to the current one.
         self.is_loading = True if self.args["load_checkpoint"] else False
         self.is_playing = True if self.args["play"] else False
+        self.is_resumed = True if self.args["resume"] else False
                 
         # TODO: Change the path for loading the packages?
         # sys.path.insert(0, '/path/to/whatever')
 
-        if self.args["monitor_cpu"] or self.args["monitor_gpu"]:
-            # Force visdom ON if "--monitor-cpu" or "--monitor-gpu" are provided.
-            self.args["visdom"] = True
+        # if self.args["monitor_cpu"] or self.args["monitor_gpu"]:
+        #     # Force visdom ON if "--monitor-cpu" or "--monitor-gpu" are provided.
+        #     self.args["visdom"] = True
 
         self.state = {}
         # Root: Indicates where we are right now
         self.state['path_root'] = os.path.split(root_path)[0]
         
         # Session: Indicates where we want our codes to be stored
-        if self.is_loading:
+        if self.is_loading and self.is_playing:
             # If we are playing a recorded checkpoint, we must save the results into the `evaluations` path
             # of that session.
             checkpoint_path = os.path.split(self.args["load_checkpoint"])[0]
             self.state['path_base_sessions'] = os.path.join(os.path.split(checkpoint_path)[0], "evaluations")
+        elif self.is_loading and self.is_resumed:
+            if self.args['session_name']:
+                print("Warning: --session-name is ignored.")
+
+            directory = os.path.dirname(os.path.dirname(self.args["load_checkpoint"]))
+            self.state['path_base_sessions'] = os.path.split(directory)[0]
+            self.args['session_name'] = os.path.split(directory)[1]
+        elif self.is_loading:
+            raise Exception("--load-checkpoint should be used either with --play or --resume.")
         else:
             # OK, we are loading from a checkpoint, just create session from scratch.
             # self.state['path_root_session']  = self.args["session_path"]
@@ -126,24 +164,21 @@ class Session(object):
                 print("", file=f)
         except Exception as ex:
             print(ex)
-        # if not os.path.exists(self.state['path_base_sessions']): # TODO: and not self.dry_run:
-        #     os.makedirs(self.state['path_base_sessions'])
-        #     # Create an empty __init__.py in it!
-        #     with open(os.path.join(self.state['path_base_sessions'], '__init__.py'), 'w') as f:
-        #         print("", file=f)
 
         # 2. Create a unique 'path_session':
         if not self.dry_run:
-            if self.args["session_name"]:
+            if self.args['session_name']:
                 self.state['path_session'] = os.path.join(self.state['path_base_sessions'], self.args["session_name"])
             else:
                 self.state['path_session'] = make_unique_path_session(self.state['path_base_sessions'], prefix="session_")
         else:
             self.state['path_session'] = os.path.join(self.state['path_base_sessions'], "no_session")
         
+        
         self.state['session_name'] = os.path.split(self.state['path_session'])[-1]
 
         self.state['path_checkpoints'] = os.path.join(self.state['path_session'], 'checkpoints')
+        self.state['path_memsnapshot'] = os.path.join(self.state['path_session'], 'memsnapshot')
         self.state['path_monitor']     = os.path.join(self.state['path_session'], 'monitor')
         self.state['path_videos']      = os.path.join(self.state['path_session'], 'videos')
         self.state['path_tensorboard'] = os.path.join(self.state['path_session'], 'tensorboard')
@@ -151,14 +186,15 @@ class Session(object):
         self.state['file_cpanel'] = os.path.join(self.state['path_session'], 'cpanel.json')
         self.state['file_params'] = os.path.join(self.state['path_session'], 'params.yaml')
         self.state['file_report'] = os.path.join(self.state['path_session'], 'report.log')
-        self.state['file_visdom'] = os.path.join(self.state['path_session'], 'visdom.log')
+        # self.state['file_visdom'] = os.path.join(self.state['path_session'], 'visdom.log')
         self.state['file_varlog'] = os.path.join(self.state['path_session'], 'varlog.json')
         self.state['file_prolog'] = os.path.join(self.state['path_session'], 'prolog.json')
 
         # 3. Creating the rest of paths:
-        if not self.is_playing and not self.dry_run:
+        if not self.is_playing and not self.is_resumed and not self.dry_run:
             os.makedirs(self.state['path_checkpoints'])
-        if not self.dry_run:
+            os.makedirs(self.state['path_memsnapshot'])
+        if not self.is_resumed and not self.dry_run:
             os.makedirs(self.state['path_monitor'])
         
         
@@ -166,7 +202,7 @@ class Session(object):
         self.initVarlog()
         self.initProlog()
         self.initTensorboard()
-        self.initVisdom()
+        # self.initVisdom()
         # TODO: We don't need the "SaaM" when are loading from a checkpoint.
         # if not self.is_playing:
         if not self.is_loading:
@@ -215,6 +251,11 @@ class Session(object):
         
         Link: https://pytorch.org/docs/stable/tensorboard.html
         """
+        # TODO: Is it required?
+        # if self.dry_run:
+        #     logger.warn("Tensorboard initialization was ignored due to --dry-run argument.")
+        #     return
+
         from torch.utils.tensorboard import SummaryWriter
         self.writer = SummaryWriter(log_dir=self.state['path_tensorboard'])
         
@@ -234,21 +275,21 @@ class Session(object):
                 if attr.startswith("add_") or (attr=="flush") or (attr=="close"):
                     setattr(self.writer, attr, lambda *args, **kw: None)    
 
-    def initVisdom(self):
-        """
-        This function initializes the connection to the Visdom server. The Visdom server must be running.
-
-        .. code-block:: bash
-            :caption: Running visdom server
-
-            visdom -port 8097 &
-        """
-        if self.args["visdom"]:
-            from digideep.utility.visdom_engine.Instance  import VisdomInstance
-            if not self.dry_run:
-                VisdomInstance(port=self.args["visdom_port"], log_to_filename=self.state["file_visdom"], replay=True)
-            else:
-                VisdomInstance(port=self.args["visdom_port"])
+    # def initVisdom(self):
+    #     """
+    #     This function initializes the connection to the Visdom server. The Visdom server must be running.
+    #
+    #     .. code-block:: bash
+    #         :caption: Running visdom server
+    #
+    #         visdom -port 8097 &
+    #     """
+    #     if self.args["visdom"]:
+    #         from digideep.utility.visdom_engine.Instance  import VisdomInstance
+    #         if not self.dry_run:
+    #             VisdomInstance(port=self.args["visdom_port"], log_to_filename=self.state["file_visdom"], replay=True)
+    #         else:
+    #             VisdomInstance(port=self.args["visdom_port"])
 
     def createSaaM(self):
         """ SaaM = Session-as-a-Module
@@ -280,12 +321,13 @@ class Session(object):
     def runMonitor(self):
         """
         This function will load the monitoring tool for CPU and GPU utilization and memory consumption.
-        This tool will use Visdom.
         """
-        if self.args["monitor_cpu"] or self.args["monitor_gpu"]:
-            from digideep.utility.stats import StatVizdom
-            sv = StatVizdom(monitor_cpu=self.args["monitor_cpu"], monitor_gpu=self.args["monitor_gpu"])
-            sv.start()
+        # TODO: StatVisdom is deprecated. Update the following code.
+        # if self.args["monitor_cpu"] or self.args["monitor_gpu"]:
+        #     from digideep.utility.stats import StatVizdom
+        #     sv = StatVizdom(monitor_cpu=self.args["monitor_cpu"], monitor_gpu=self.args["monitor_gpu"])
+        #     sv.start()
+        pass
 
     
     def update_params(self, params):
@@ -330,6 +372,21 @@ class Session(object):
         with open(os.path.join(self.state['path_session'], 'done.lock'), 'w') as f:
             print("", file=f)
     
+    def rsync(self, source, target):
+        t = ParCommand(['rsync', '-azP', '--delete', '--perms', '--chmod=ugo+rwx', source, target], logger)
+        t.start()
+        return t
+    def take_memory_snapshop(self, memroot, name):
+        target = os.path.join(self.state['path_memsnapshot'], name) + "/"
+        t = self.rsync(source=memroot+"/", target=target)
+        # Join, because memory will keep changing during "rsync".
+        t.join()
+    def load_memory_snapshot(self, memroot, name):
+        source = os.path.join(self.state['path_memsnapshot'], name) + "/"
+        t = self.rsync(source=source, target=memroot+"/")
+        # Join, because we cannot proceed without this task already completed.
+        t.join()
+
     #################################
     # Apparatus for model save/load #
     #################################
@@ -384,6 +441,7 @@ class Session(object):
         ## Save/Load/Dry-run
         parser.add_argument('--load-checkpoint', metavar=('<path>'), default='', type=str, help="Load a checkpoint to resume training from that point.")
         parser.add_argument('--play', action="store_true", help="Will play the stored policy.")
+        parser.add_argument('--resume', action="store_true", help="Will resume training the stored policy.")
         parser.add_argument('--dry-run', action="store_true", help="If used no footprints will be stored on disc whatsoever.")
         ## Session
         parser.add_argument('--session-path', metavar=('<path>'), default='/tmp/digideep_sessions', type=str, help="The path to store the sessions. Default is in /tmp")
