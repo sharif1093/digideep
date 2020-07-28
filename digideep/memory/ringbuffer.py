@@ -32,10 +32,12 @@ class Memory:
         self.counter = 0
     
     def state_dict(self):
-        return {"state":self.state, "buffer":self.buffer}
+        # TODO: In order to save self.buffer, implement the save_snapshot/load_snapshot interface.
+        # return {"state":self.state, "buffer":self.buffer}
+        return {"state":self.state}
     def load_state_dict(self, state_dict):
         self.state.update(state_dict["state"])
-        self.buffer = state_dict["buffer"]
+        # self.buffer = state_dict["buffer"]
         
     
     
@@ -140,6 +142,71 @@ class Memory:
             is always ``k x n-steps + 1``, where ``k`` is the number of chunks stored so far.
 
         """
+
+
+
+        #########################################
+        ### CODE FOR DEBUGGING THE INPUT DATA ###
+        #########################################
+        ## Tensorboard functions:
+        # add_scalar(tag, scalar_value, global_step=None, walltime=None)
+        # add_scalars(main_tag, tag_scalar_dict, global_step=None, walltime=None)
+        # add_histogram(tag, values, global_step=None, bins='tensorflow', walltime=None, max_bins=None)
+        # add_image(tag, img_tensor, global_step=None, walltime=None, dataformats='CHW')
+        # add_images(tag, img_tensor, global_step=None, walltime=None, dataformats='NCHW')
+        # add_figure(tag, figure, global_step=None, close=True, walltime=None)
+        # add_video(tag, vid_tensor, global_step=None, fps=4, walltime=None)
+        # add_audio(tag, snd_tensor, global_step=None, sample_rate=44100, walltime=None)
+        # add_text(tag, text_string, global_step=None, walltime=None)
+        # add_graph(model, input_to_model=None, verbose=False)
+        # add_embedding(mat, metadata=None, label_img=None, global_step=None, tag='default', metadata_header=None)
+        # add_pr_curve(tag, labels, predictions, global_step=None, num_thresholds=127, weights=None, walltime=None)
+        # add_custom_scalars(layout)
+        # add_mesh(tag, vertices, colors=None, faces=None, config_dict=None, global_step=None, walltime=None)
+        # add_hparams(hparam_dict=None, metric_dict=None)
+
+        # print(chunk.keys())
+        # # print("-"*40)
+
+        # print(chunk["/observations/camera"].shape)
+        # Camera: 1, 2, 4, 180, 240)
+        
+        # self.session.writer.add_histogram('memory:observations/agent', chunk["/observations/agent"][0,0], self.state['frame'])
+        # self.session.writer.add_scalar('memory:rewards', chunk["/rewards"][0,0], self.state['frame'])
+        # add_hparams
+        
+        
+        
+        # dataformats=NCHW, NHWC, CHW, HWC, HW, WH
+
+        # shape = chunk["/observations/camera"][0,0].shape
+        # cam_batch = chunk["/observations/camera"][0,0]
+
+        ## Sequence of images as stacking
+        # self.session.writer.add_images(tag=self.params["name"]+"_images", 
+        #                                img_tensor=chunk["/observations/camera"][0,0].reshape(shape[0],1,shape[1],shape[2]),
+        #                                global_step=self.state['frame'],
+        #                                dataformats='NCHW')
+        
+        ## Sequence of images as channels
+        # self.session.writer.add_image(tag=self.params["name"]+"_images", 
+        #                               img_tensor=chunk["/observations/camera"][0,0],
+        #                               global_step=self.state['frame'],
+        #                               dataformats='CHW')
+
+        ## Histograms
+        # self.session.writer.add_histogram('distribution centers', x + i, i)
+        
+        # cam_stacked = np.concatenate(cam_batch, axis=1)
+        # new_img = Image.fromarray(cam_stacked, 'L')
+        # new_img.save("/master/reports/{:04d}_gray_{}.jpg".format(self.state['frame'], self.params["name"]))
+        ######################################################
+        
+        
+        self.state['frame'] += 1
+        
+        
+
         
         ## Assertions
         sizes = [chunk[key].shape[0:2] for key in chunk.keys()]
