@@ -52,6 +52,20 @@ def seed_all(seed, cuda_deterministic = False):
     if cuda_deterministic and torch.cuda.is_available():
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
+def set_rng_state(states):
+    np.random.set_state(states['numpy'])
+    random.setstate(states['random'])
+    torch_states = torch.tensor(states['torch'])
+    torch_cuda_states = [torch.tensor(s) for s in states['torch_cuda']]
+    torch.set_rng_state(torch_states)
+    torch.cuda.set_rng_state_all(torch_cuda_states)
+def get_rng_state():
+    states = {}
+    states['numpy'] = np.random.get_state()
+    states['random'] = random.getstate()
+    states['torch'] = torch.get_rng_state().numpy()
+    states['torch_cuda'] = [s.numpy() for s in torch.cuda.get_rng_state_all()]
+    return states
 
 def get_module(addr):
     """
