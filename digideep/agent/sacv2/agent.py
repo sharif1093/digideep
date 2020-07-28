@@ -190,12 +190,12 @@ class Agent(AgentBase):
             #     reward = torch.FloatTensor(reward).to(self.device).unsqueeze(1)
             #     masks = torch.FloatTensor(masks).to(self.device).unsqueeze(1)
 
+            ## Critic loss
             with torch.no_grad():
                 next_state_action, next_state_log_prob = self.policy.evaluate_actions(next_state)
                 qf1_next_target = self.policy.model["critic1_target"](next_state, next_state_action)
                 qf2_next_target = self.policy.model["critic2_target"](next_state, next_state_action)
-
-
+            
                 min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - alpha * next_state_log_prob
                 next_q_value = reward + masks * gamma * (min_qf_next_target)
 
@@ -204,10 +204,24 @@ class Agent(AgentBase):
             qf1 = self.policy.model["critic1"](state, action)
             qf2 = self.policy.model["critic2"](state, action)
 
-            # JQ = 𝔼(st,at)~D[0.5(Q(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
+            # # JQ = 𝔼(st,at)~D[0.5(Q(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
             qf1_loss = F.mse_loss(qf1, next_q_value)
             qf2_loss = F.mse_loss(qf2, next_q_value)
-            
+
+            # NOTE: Since we are using self.policy.model["critic1"] & self.policy.model["critic2"] for calculating
+            #       actor loss in the continuation, it is super critical to calculate and step the qf1_loss 
+            #       and qf2_loss here. Otherwise PyTorch won't know how to separate these different gradients which
+            #       are otherwise mixed. It will complain about in-place operations that mix the gradients.
+            self.optimizer["critic1"].zero_grad()
+            qf1_loss.backward()
+            self.optimizer["critic1"].step()
+
+            self.optimizer["critic2"].zero_grad()
+            qf2_loss.backward()
+            self.optimizer["critic2"].step()
+
+
+            ## Policy loss            
             pi, log_pi = self.policy.evaluate_actions(state)
 
             qf1_pi = self.policy.model["critic1"](state, pi)
@@ -217,15 +231,6 @@ class Agent(AgentBase):
 
             # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
             actor_loss = ((alpha * log_pi) - min_qf_pi).mean()
-
-            
-            self.optimizer["critic1"].zero_grad()
-            qf1_loss.backward()
-            self.optimizer["critic1"].step()
-
-            self.optimizer["critic2"].zero_grad()
-            qf2_loss.backward()
-            self.optimizer["critic2"].step()
 
             self.optimizer["actor"].zero_grad()
             actor_loss.backward()
