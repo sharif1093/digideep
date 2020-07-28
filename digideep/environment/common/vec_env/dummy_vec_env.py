@@ -97,9 +97,29 @@ class DummyVecEnv(VecEnv):
 
     def get_images(self):
         return [env.render(mode='rgb_array') for env in self.envs]
+    
+    def set_rng_state(self, states):
+        for env, state in zip(self.envs, states):
+            env.unwrapped.np_random.set_state(state)
+    def get_rng_state(self):
+        return [env.unwrapped.np_random.get_state() for env in self.envs]
+
+    def state_dict(self):
+        states = []
+        for env in self.envs:
+            if hasattr(env.unwrapped, "get_env_state"):
+                states += [env.unwrapped.get_env_state()]
+            else:
+                states += [None]
+        return states
+    def load_state_dict(self, state_dicts):
+        for env, state_dict in zip(self.envs, state_dicts):
+            if hasattr(env.unwrapped, "set_env_state"):
+                env.unwrapped.set_env_state(state_dict)
 
     def render(self, mode='human'):
         if self.num_envs == 1:
             return self.envs[0].render(mode=mode)
         else:
             return super().render(mode=mode)
+
