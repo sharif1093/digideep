@@ -223,10 +223,12 @@ def convert_time_to_batch_major(episode):
     episode_batch = {}
     for key in episode.keys():
         try:
+            val = None
             # print(key, "=", episode[key])
             entry_data_type = episode[key][0].dtype
-
-            val = np.array(episode[key], dtype=entry_data_type).copy()  #TODO: Should we copy?
+            #TODO: Should we copy?
+            # val = np.array(episode[key], dtype=entry_data_type).copy()
+            val = np.asarray(episode[key], dtype=entry_data_type)
             # make inputs batch-major instead of time-major
             episode_batch[key] = val.swapaxes(0, 1)
         except Exception as ex:
