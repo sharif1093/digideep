@@ -37,7 +37,9 @@ cpanel["test_activate"] = True  # Test activated
 cpanel["test_interval"] = 10    # Test Interval Every #n Epochs
 cpanel["test_win_size"] = 10    # Number of episodes to run test.
 cpanel["save_interval"] = 10    # Save Interval Every #n Epochs
-
+## Simulation will end when either time or max iterations exceed the following:
+cpanel["max_exec_time"] = 20     # hours
+cpanel["max_exec_iter"] = None   # number of epochs
 cpanel["seed"] = 0
 cpanel["cuda_deterministic"] = False # With TRUE we MIGHT get more deterministic results but at the cost of speed.
 
@@ -168,6 +170,8 @@ def gen_params(cpanel):
     #####################################
     params["runner"] = {}
     params["runner"]["name"] = cpanel.get("runner_name", "digideep.pipeline.Runner")
+    params["runner"]["max_time"] = cpanel.get("max_exec_time", None)
+    params["runner"]["max_iter"] = cpanel.get("max_exec_iter", None)
     params["runner"]["n_cycles"] = cpanel["epoch_size"]    # Meaning that 100 cycles are 1 epoch.
     params["runner"]["n_epochs"] = cpanel["number_epochs"] # Testing and savings are done after each epoch.
     params["runner"]["randargs"] = {'seed':cpanel["seed"], 'cuda_deterministic':cpanel["cuda_deterministic"]}
@@ -253,7 +257,7 @@ def gen_params(cpanel):
     params["memory"] = {}
     params["memory"]["train"] = {}
     params["memory"]["train"]["type"] = "digideep.memory.ringbuffer.Memory"
-    params["memory"]["train"]["args"] = {"chunk_sample_len":cpanel["n_steps"], "buffer_chunk_len":cpanel["memory_size_in_chunks"], "overrun":1}
+    params["memory"]["train"]["args"] = {"name":"train", "chunk_sample_len":cpanel["n_steps"], "buffer_chunk_len":cpanel["memory_size_in_chunks"], "overrun":1}
     ##############################################
 
     
