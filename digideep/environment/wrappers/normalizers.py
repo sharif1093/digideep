@@ -120,6 +120,7 @@ class VecNormalizeRew(VecEnvWrapper):
     def __init__(self, venv, mode, clip=10., gamma=0.99, epsilon=1e-8):
         VecEnvWrapper.__init__(self, venv)
         self.training = True if mode == "train" else False
+        # self.training = False if mode in ["test", "eval"] else True
 
         self.normalizer = Normalizer(shape=(), clip=clip, eps=epsilon)
         self.ret = np.zeros(self.num_envs)
