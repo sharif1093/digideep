@@ -166,13 +166,13 @@ class Agent(AgentBase):
 
             log_prob_target = expected_new_q_value - expected_value
             # TODO: Apparently the calculation of actor_loss is problematic: none of its ingredients have gradients! So backprop does nothing.
-            actor_loss = (log_prob * (log_prob - log_prob_target).detach()).mean()
+            actor_loss_base = (log_prob * (log_prob - log_prob_target).detach()).mean()
             
             mean_loss = float(self.params["methodargs"]["mean_lambda"]) * mean.pow(2).mean()
             std_loss  = float(self.params["methodargs"]["std_lambda"])  * log_std.pow(2).mean()
             z_loss    = float(self.params["methodargs"]["z_lambda"])    * z.pow(2).sum(1).mean()
 
-            actor_loss += mean_loss + std_loss + z_loss
+            actor_loss = actor_loss_base + mean_loss + std_loss + z_loss
 
             self.optimizer["softq"].zero_grad()
             softq_loss.backward()
