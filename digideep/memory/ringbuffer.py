@@ -27,13 +27,16 @@ class Memory:
         self.state['start'] = 0 # Start index
         self.state['end']   = self.params["overrun"] - 1 # End index
         self.state['batch_size'] = None
+        self.state['frame'] = 0
 
         self.counter = 0
     
     def state_dict(self):
-        return None
+        return {"state":self.state, "buffer":self.buffer}
     def load_state_dict(self, state_dict):
-        pass
+        self.state.update(state_dict["state"])
+        self.buffer = state_dict["buffer"]
+        
     
     
     def get_valid_index(self, index):
