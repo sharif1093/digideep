@@ -24,6 +24,7 @@ from .common.vec_env.dummy_vec_env import DummyVecEnv
 
 ## Our essential wrappers
 from .wrappers.save_state import VecSaveState
+from .wrappers.random_state import VecRandomState
 
 from .wrappers.adapter import WrapperDummyMultiAgent
 from .wrappers.adapter import WrapperDummyDictObs
@@ -116,7 +117,7 @@ class MakeEnvironment:
     
 
     def make_env(self, rank, force_no_monitor=False, extra_env_kwargs={}):
-        import sys # For debugging
+        # import sys # For debugging
         def _f():
             # The header of gym.make(.): `def make(id, **kwargs)`
             env = gym.make(self.params["name"], **extra_env_kwargs)
@@ -142,7 +143,8 @@ class MakeEnvironment:
             ## Add a video recorder if mode == "eval".
             if self.mode == "eval" and not self.session.dry_run:
                 videos_dir = os.path.join(self.session["path_videos"], str(rank))
-                env = MonitorVideoRecorder(env, videos_dir, video_callable=lambda id:True)
+                # force will be true when resuming training from a checkpoint.
+                env = MonitorVideoRecorder(env, videos_dir, video_callable=lambda id:True, force=self.session.is_resumed)
                 
 
             ## Dummy Dict Action and Observation
@@ -174,6 +176,9 @@ class MakeEnvironment:
             envs = DummyVecEnv(envs)
         else:
             envs = SubprocVecEnv(envs)
+
+        ## Handling random states
+        envs = VecRandomState(envs)
 
         ## Converting data structure of obs/rew/infos/actions:
         envs = VecObsRewInfoActWrapper(envs)
