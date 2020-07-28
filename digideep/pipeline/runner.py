@@ -175,11 +175,10 @@ class Runner:
         # We do intentionally update the state of test/eval explorers with the state of "train" explorer.
         # We are only interested in states of the reward/observation normalizers.
         # for explorer_name in self.explorer:
-        #     ## NOTE: Should we reset any of the environments?
+        #     ## NOTE: Which environments must we reset?
         #     self.explorer[explorer_name].reset()
-        #
-        #     if explorer_name in explorer_state:
-        #         continue
+        #     # if explorer_name in explorer_state:
+        #     #     continue
         #     logger.warn("Loading explorer '{}' states from 'train'.".format(explorer_name))
         #     self._sync_normalizations(source_explorer="train", target_explorer=explorer_name)
 
@@ -360,6 +359,7 @@ class Runner:
             log()
         """
         try:
+            self._sync_normalizations(source_explorer="train", target_explorer="eval")
             self.explorer["eval"].reset()
             while True:
                 # Cycles
