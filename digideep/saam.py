@@ -98,6 +98,8 @@ class LogLoader:
         return self.data[key]
     def __delitem__(self, key):
         del self.data[key]
+    # def __iter__(self):
+    #     return self.data.keys()
 
     def _update_by_entry(self, entry):
         for key in entry["data"]:
