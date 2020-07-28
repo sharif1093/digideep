@@ -3,11 +3,12 @@ import time
 
 from digideep.environment import Explorer
 from digideep.utility.logging import logger
-from digideep.utility.toolbox import seed_all, get_class, get_module
+from digideep.utility.toolbox import seed_all, get_class, get_module, set_rng_state, get_rng_state
 from digideep.utility.profiling import profiler, KeepTime
 from digideep.utility.monitoring import monitor
+from collections import OrderedDict as odict
 
-# Runner should be irrelevent of torch, gym, dm_control, etc.
+# Runner should be irrelevant of torch, gym, dm_control, etc.
 
 class Runner:
     """
@@ -36,6 +37,18 @@ class Runner:
         self.state["i_epoch"] = 0
         self.state["loading"] = False
 
+    def lazy_init(self):
+        """
+        Initialization of attributes which are not part of the object state.
+        These need lazy initialization due to proper initialization when loading
+        from a checkpoint.
+        """
+        self.time_start = time.time()
+        logger.fatal("Execution (max) timer started ...")
+
+        self.save_major_checkpoint = False
+        self.iterations = 0
+
         profiler.reset()
         monitor.reset()
         self.monitor_epoch()
@@ -57,7 +70,11 @@ class Runner:
         * Load all state dicts.
         * (OPTIONAL) Override parameters.
         """
+        # Up to now, states of the runner are already loaded. Objects' states not, however.
+        self.lazy_init()
         self.session = session
+        
+        # TODO: Load random states to continue random number generation from pause.
         seed_all(**self.params["runner"]["randargs"])
 
         # The order is as it is:
@@ -113,6 +130,8 @@ class Runner:
             Memory should be dumped in a separate file, since it can get really large.
             Moreover, it should be optional.
         """
+        random_state = get_rng_state()
+
         agents_state = {}
         for agent_name in self.agents:
             agents_state[agent_name] = self.agents[agent_name].state_dict()
@@ -120,15 +139,16 @@ class Runner:
         ## The state of explorer["test"] and explorer["eval"] is not important for us.
         explorer_state = {}
         for explorer_name in self.explorer:
-            if explorer_name in ["test", "eval"]:
-                continue
+            ## We used to save only states of the train explorer:
+            # if not explorer_name in ["train"]:
+            #     continue
             explorer_state[explorer_name] = self.explorer[explorer_name].state_dict()
 
         memory_state = {}
         for memory_name in self.memory:
             memory_state[memory_name] = self.memory[memory_name].state_dict()
         
-        return {'agents':agents_state, 'explorer':explorer_state, 'memory':memory_state}
+        return {'random_state':random_state, 'agents':agents_state, 'explorer':explorer_state, 'memory':memory_state}
     def load_state_dict(self, state_dict):
         """
         This function will load the states of the internal objects:
@@ -137,6 +157,9 @@ class Runner:
         * Explorers (state of ``train`` mode would be loaded for ``test`` and ``eval`` as well)
         * Memory
         """
+        random_state = state_dict['random_state']
+        set_rng_state(random_state)
+
         agents_state = state_dict['agents']
         for agent_name in agents_state:
             self.agents[agent_name].load_state_dict(agents_state[agent_name])
@@ -151,15 +174,15 @@ class Runner:
 
         # We do intentionally update the state of test/eval explorers with the state of "train" explorer.
         # We are only interested in states of the reward/observation normalizers.
-        self._sync_normalizations(source_explorer="train", target_explorer="test")
-        self._sync_normalizations(source_explorer="train", target_explorer="eval")
+        # for explorer_name in self.explorer:
+        #     ## NOTE: Should we reset any of the environments?
+        #     self.explorer[explorer_name].reset()
+        #
+        #     if explorer_name in explorer_state:
+        #         continue
+        #     logger.warn("Loading explorer '{}' states from 'train'.".format(explorer_name))
+        #     self._sync_normalizations(source_explorer="train", target_explorer=explorer_name)
 
-        # self.explorer["test"].load_state_dict(self.explorer["train"].state_dict())
-        # self.explorer["eval"].load_state_dict(self.explorer["train"].state_dict())
-        
-        self.explorer["test"].reset()
-        self.explorer["eval"].reset()
-    
     ###
     def override(self):
         pass
@@ -190,13 +213,21 @@ class Runner:
         state['state']['loading'] = True
         self.__dict__.update(state)
     ###
-        
-    def save(self):
+    def save_final_checkpoint(self):
+        if self.save_major_checkpoint:
+            self.save(forced=True)
+            # Store snapshots for all memories only if simulation ended gracefully.
+            for memory_name in self.memory:
+                if hasattr(self.memory[memory_name], "save_snapshot"):
+                    self.memory[memory_name].save_snapshot()
+            # TODO: Mark as major check
+
+    def save(self, forced=False):
         """
         This is a high-level function for saving both the state of objects and the runner object.
         It will use helper functions from :class:`~digideep.pipeline.session.Session`.
         """
-        if self.state["i_epoch"] % self.params["runner"]["save_int"] == 0:
+        if forced or (self.state["i_epoch"] % self.params["runner"]["save_int"] == 0):
             ## 1. state_dict: Saved with torch.save
             self.session.save_states(self.state_dict(), self.state["i_epoch"])
             ## 2. runner: Saved with pickle.dump
@@ -209,70 +240,96 @@ class Runner:
         if self.state["loading"]:
             state_dict = self.session.load_states()
             self.load_state_dict(state_dict)
+            self.load_memory()
             self.state["loading"] = False
+    def load_memory(self):
+        if self.session.is_resumed:
+            for memory_name in self.memory:
+                if hasattr(self.memory[memory_name], "load_snapshot"):
+                    self.memory[memory_name].load_snapshot()
     ###############################################################
+
+    def train_cycle(self):
+        # 1. Do Experiment
+        with KeepTime("train"):
+            chunk = self.explorer["train"].update()
+        # 2. Store Result
+        with KeepTime("store"):
+            self.memory["train"].store(chunk)
+        # 3. Update Agent
+        with KeepTime("update"):
+            for agent_name in self.agents:
+                with KeepTime(agent_name):
+                    self.agents[agent_name].update()
 
     
     def train(self):
         """
         The function that runs the training loop.
 
-        .. code-block:: python
-            :caption: The pseudo-code of training loop
-
-            # Do a cycle
-            while not done:
-                # Explore
-                chunk = explorer["train"].update()
-                # Store
-                memory.store(chunk)
-                # Train
-                for agent in agents:
-                    agents[agent].update()
-
-            log()
-            test()
-            save()
-        
         See Also:
             :ref:`ref-how-runner-works`
         """
         try:
-            while self.state["i_epoch"] < self.params["runner"]["n_epochs"]:
+            # while self.state["i_epoch"] < self.state["n_epochs"]:
+            while (self.state["i_epoch"] < self.params["runner"]["n_epochs"]) and not self.termination_check():
                 self.state["i_cycle"] = 0
                 while self.state["i_cycle"] < self.params["runner"]["n_cycles"]:
                     with KeepTime("/"):
-                        # 1. Do Experiment
-                        with KeepTime("train"):
-                            chunk = self.explorer["train"].update()
-                        # 2. Store Result
-                        with KeepTime("store"):
-                            self.memory["train"].store(chunk)
-                        # 3. Update Agent
-                        with KeepTime("update"):
-                            for agent_name in self.agents:
-                                with KeepTime(agent_name):
-                                    self.agents[agent_name].update()
+                        self.train_cycle()
                     self.state["i_cycle"] += 1
-                # End of Cycle
-
+                    # End of Cycle
                 self.state["i_epoch"] += 1
                 self.monitor_epoch()
-                # NOTE: We may save/test after each cycle or at intervals.
+                self.iterations += 1
                 
+                # NOTE: We may save/test after each cycle or at intervals.
                 # 1. Perform the test
                 self.test()
-                # 2. Save
-                self.save()
-                # 3. Log
+                # 2. Log
                 self.log()
+                # 3. Save
+                self.save()
+                # Free up memory from garbage.
                 gc.collect() # Garbage Collection
 
         except (KeyboardInterrupt, SystemExit):
             logger.fatal('Operation stopped by the user ...')
         finally:
-            logger.fatal('End of operation ...')
             self.finalize()
+
+    def termination_check(self):
+        termination = False
+        if self.params["runner"]["max_time"]:
+            if time.time() - self.time_start >= self.params["runner"]["max_time"] * 3600:
+                self.save_major_checkpoint = True
+                termination = True
+                logger.fatal('Simulation maximum allowed execution time exceeded ...')
+        if self.params["runner"]["max_iter"]:
+            # TODO: Should be current_epoch - initial_epoch >= max_iter: ...
+            if self.iterations >= self.params["runner"]["max_iter"]:
+                self.save_major_checkpoint = True
+                termination = True
+                logger.fatal('Simulation maximum allowed execution iterations exceeded ...')
+        return termination
+    
+
+    def finalize(self, train=True):
+        logger.fatal('End of operation ...')
+        if train:
+            # Mark session as done if we have went through all epochs.
+            # if self.state["i_epoch"] == self.state["n_epochs"]:
+            if self.state["i_epoch"] == self.params["runner"]["n_epochs"]:
+                self.session.mark_as_done()
+                self.save_major_checkpoint = True
+            
+            self.save_final_checkpoint()    
+        
+        # Close all explorers benignly:
+        for key in self.explorer:
+            self.explorer[key].close()
+        logger.fatal("\n",'='*50,"\n","\n"*5," "*15,"END OF SIMULATION\n","\n"*5,"="*50,"\n"*5, sep="")
+
 
     def test(self):
         # Make the states of the two explorers train/test exactly the same, for the states of the environments.
@@ -289,7 +346,6 @@ class Runner:
                         # If num_worker>1 it is possible that we get more than required test episodes.
                         # The rest will be reported with the next test run.
                         self.explorer["test"].update()
-
 
     def enjoy(self): #i.e. eval
         """This function evaluates the current policy in the environment. It only runs the explorer in a loop.
@@ -319,23 +375,16 @@ class Runner:
         except (KeyboardInterrupt, SystemExit):
             logger.fatal('Operation stopped by the user ...')
         finally:
-            logger.fatal('End of operation ...')
             self.finalize(train=False)
-
-    def finalize(self, train=True):
-        if train:
-            # Mark session as done if we have went through all epochs.
-            if self.state["i_epoch"] == self.params["runner"]["n_epochs"]:
-                self.session.mark_as_done()
-        
-        # Close all explorers benignly:
-        for key in self.explorer:
-            self.explorer[key].close()
 
 
     #####################
     def _sync_normalizations(self, source_explorer, target_explorer):
         state_dict = self.explorer[source_explorer].state_dict()
+        # digideep.environment.wrappers.normalizers:VecNormalizeObsDict         Observation Normalization States
+        # digideep.environment.wrappers.normalizers:VecNormalizeRew             Reward Normalizing States
+        # digideep.environment.wrappers.random_state:VecRandomState             Random Generator States
+        # digideep.environment.common.vec_env.subproc_vec_env:SubprocVecEnv     Physical states
         
         keys = ["digideep.environment.wrappers.normalizers:VecNormalizeObsDict", "digideep.environment.wrappers.normalizers:VecNormalizeRew"]
         
@@ -387,9 +436,9 @@ class Runner:
 
         # Printing profiling information:
         logger("PROFILING:\n"+str(profiler))
-        meta = {"epoch":self.state["i_epoch"],
-                "frame":frame,
-                "episode":episode}
+        meta = odict({"epoch":self.state["i_epoch"],
+                      "frame":frame,
+                      "episode":episode})
 
         profiler.dump(meta)
         profiler.reset()
