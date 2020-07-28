@@ -1,5 +1,5 @@
 """
-This module provides tools to monitor the CPU/GPU/Memory utilization using Visdom.
+This module provides tools to monitor the CPU/GPU/Memory utilization using Monitoring.
 """
 
 from digideep.utility.timer import Timer
