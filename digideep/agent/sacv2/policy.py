@@ -102,7 +102,7 @@ class Policy(PolicyBase):
     
         log_prob = dist.log_prob(z)
         # Correction term to enforce action bound. See Haarnoja et al. (2018): http://arxiv.org/abs/1801.01290.
-        log_prob -= torch.log(1 - action.pow(2) + self.params["epsilon"])
+        log_prob = log_prob - torch.log(1 - action.pow(2) + self.params["epsilon"])
         # log_prob = log_prob.sum(-1, keepdim=True)
         log_prob = log_prob.sum(1, keepdim=True)
     
