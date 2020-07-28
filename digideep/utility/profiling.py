@@ -81,7 +81,7 @@ class Profiler:
 
     def set_output_file(self, path):
         self.filename = path
-    def dump(self, meta = {}):
+    def dump(self, meta = odict()):
         if self.filename:
             f = open(self.filename, 'a')
             out = {"meta":meta,"data":self.data}
