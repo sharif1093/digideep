@@ -3,6 +3,8 @@ from copy import deepcopy
 import numpy as np
 from digideep.utility.json_encoder import JsonNumEncoder
 import time
+import os
+# import traceback
 
 class WindowValue:
     def __init__(self, value, window):
@@ -71,7 +73,7 @@ class Monitor(object):
 
     def __init__(self):
         self.filename = None
-        self.meta = {}
+        self.meta = odict()
         self.data = odict()
         self.pack = [] # A list of dicts: {"meta":{}, "data":{}}
                 
@@ -147,6 +149,14 @@ class Monitor(object):
     
     def set_output_file(self, path):
         self.filename = path
+        if self.filename:
+            main_path = os.path.split(self.filename)[0]
+            try:
+                print("[Monitor]: Trying `mkdir -p", main_path, "`")
+                os.makedirs(main_path) # TODO: , exist_ok=True
+            except:
+                pass
+
     def dump(self):
         self.pack_data()
         if self.filename:
