@@ -43,7 +43,7 @@ def main(session):
 
     # 2. Initializing: It will load_state_dicts if we are in loading mode
     runner.start(session)
-
+    
     # 3. Train/Enjoy
     if session.is_playing:
         runner.enjoy()
@@ -57,5 +57,3 @@ if __name__ == "__main__":
         main(session)
     finally:
         session.finalize()
-
-    # session.run_sacred()
