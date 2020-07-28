@@ -63,6 +63,10 @@ def worker(remote, parent_remote, env_fn_wrapper):
                     remote.send(env.unwrapped.set_env_state(data))
                 else:
                     remote.send(None)
+            elif cmd == 'get_rng_state':
+                remote.send(env.unwrapped.np_random.get_state())
+            elif cmd == 'set_rng_state':
+                remote.send(env.unwrapped.np_random.set_state(data))
             else:
                 raise NotImplementedError
     except KeyboardInterrupt:
@@ -107,7 +111,6 @@ class SubprocVecEnv(VecEnv):
         # Get the type of the environment, which is the main class that has created the environment
         self.remotes[0].send(('get_type', None))
         env_type = self.remotes[0].recv()
-        
 
         VecEnv.__init__(self, len(env_fns), observation_space, action_space, spec, env_type)
 
@@ -167,19 +170,25 @@ class SubprocVecEnv(VecEnv):
     def _assert_not_closed(self):
         assert not self.closed, "Trying to operate on a SubprocVecEnv after calling close()"
     
-    def state_dict(self):
-        # print("venv state_dict called")
 
+    def set_rng_state(self, states):
+        for remote, state in zip(self.remotes, states):
+            remote.send(('set_rng_state', state))
+        results = [remote.recv() for remote in self.remotes]
+        return results
+    def get_rng_state(self):
+        for remote in self.remotes:
+            remote.send(('get_rng_state', None))
+        states = [remote.recv() for remote in self.remotes]
+        return states
+
+    def state_dict(self):
         for remote in self.remotes:
             remote.send(('get_env_state', None))
         states = [remote.recv() for remote in self.remotes]
         return states
-        
     def load_state_dict(self, state_dicts):
-        # print("venv load_state_dict called")
-
         for remote, state_dict in zip(self.remotes, state_dicts):
             remote.send(('set_env_state', state_dict))
-        
         results = [remote.recv() for remote in self.remotes]
         return results
