@@ -1,5 +1,7 @@
 import gc
+import sys
 import time
+import signal
 
 from digideep.environment import Explorer
 from digideep.utility.logging import logger
@@ -37,6 +39,34 @@ class Runner:
         self.state["i_epoch"] = 0
         self.state["loading"] = False
 
+
+    def lazy_connect_signal(self):
+        # Connect shell signals
+        signal.signal(signal.SIGUSR1, self.on_sigusr1_received)
+        signal.signal(signal.SIGINT,  self.on_sigint_received)
+
+    def on_sigint_received(self, signalNumber, frame):
+        print("") # To print on the next line where ^C is printed.
+        logger.fatal("Received CTRL+C. Will terminate process after cycle is over.")
+        self.ready_for_termination = True
+        self.save_major_checkpoint = True
+
+        self.ctrl_c_count += 1
+
+        if self.ctrl_c_count == 1:
+            logger.fatal("Press CTRL+C one more time to exit without saving.")
+        elif self.ctrl_c_count == 2:
+            # NOTE: Kill all subprocesses
+            self.ready_for_termination = True
+            self.save_major_checkpoint = False
+            sys.exit(1)
+    
+    def on_sigusr1_received(self, signalNumber, frame):
+        logger.fatal("Received SIGUSR1 signal. Will terminate process after cycle is over.")
+        self.ready_for_termination = True
+        self.save_major_checkpoint = True
+
+
     def lazy_init(self):
         """
         Initialization of attributes which are not part of the object state.
@@ -47,11 +77,16 @@ class Runner:
         logger.fatal("Execution (max) timer started ...")
 
         self.save_major_checkpoint = False
+        self.ready_for_termination = False
         self.iterations = 0
 
         profiler.reset()
         monitor.reset()
         self.monitor_epoch()
+
+        # Ignore interrupt signals for_subprocesses
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        self.ctrl_c_count = 0
 
     def monitor_epoch(self):
         monitor.set_meta_key("epoch", self.state["i_epoch"])
@@ -81,6 +116,15 @@ class Runner:
         self.instantiate()
         self.load()
         self.override()
+        
+
+        # NOTE: We lazily connect signals so it is not spawned in the child processes.
+        self.lazy_connect_signal()
+
+        # NOTE: We set this state for the future.
+        #       Because all future loading would
+        #       involve actual loading of states.
+        self.state["loading"] = True
     
 
     def instantiate(self):
@@ -209,17 +253,17 @@ class Runner:
         """
         This function is used by ``pickle.load`` when we load the :class:`Runner`.
         """
-        state['state']['loading'] = True
+        # state['state']['loading'] = True
         self.__dict__.update(state)
     ###
     def save_final_checkpoint(self):
-        if self.save_major_checkpoint:
-            self.save(forced=True)
-            # Store snapshots for all memories only if simulation ended gracefully.
-            for memory_name in self.memory:
-                if hasattr(self.memory[memory_name], "save_snapshot"):
-                    self.memory[memory_name].save_snapshot()
-            # TODO: Mark as major check
+        self.save(forced=True)
+        # # Store snapshots for all memories only if simulation ended gracefully.
+        # for memory_name in self.memory:
+        #     if hasattr(self.memory[memory_name], "save_snapshot"):
+        #         self.memory[memory_name].save_snapshot()
+        # # TODO: Mark as major check
+
 
     def save(self, forced=False):
         """
@@ -239,13 +283,13 @@ class Runner:
         if self.state["loading"]:
             state_dict = self.session.load_states()
             self.load_state_dict(state_dict)
-            self.load_memory()
-            self.state["loading"] = False
-    def load_memory(self):
-        if self.session.is_resumed:
-            for memory_name in self.memory:
-                if hasattr(self.memory[memory_name], "load_snapshot"):
-                    self.memory[memory_name].load_snapshot()
+            # self.load_memory()
+            # self.state["loading"] = False
+    # def load_memory(self):
+    #     if self.session.is_resumed:
+    #         for memory_name in self.memory:
+    #             if hasattr(self.memory[memory_name], "load_snapshot"):
+    #                 self.memory[memory_name].load_snapshot()
     ###############################################################
 
     def train_cycle(self):
@@ -298,7 +342,7 @@ class Runner:
             self.finalize()
 
     def termination_check(self):
-        termination = False
+        termination = self.ready_for_termination
         if self.params["runner"]["max_time"]:
             if time.time() - self.time_start >= self.params["runner"]["max_time"] * 3600:
                 self.save_major_checkpoint = True
@@ -322,12 +366,13 @@ class Runner:
                 self.session.mark_as_done()
                 self.save_major_checkpoint = True
             
-            self.save_final_checkpoint()    
+            if self.save_major_checkpoint:
+                self.save_final_checkpoint()
+                # self.save_major_checkpoint = False
         
         # Close all explorers benignly:
         for key in self.explorer:
             self.explorer[key].close()
-        logger.fatal("\n",'='*50,"\n","\n"*5," "*15,"END OF SIMULATION\n","\n"*5,"="*50,"\n"*5, sep="")
 
 
     def test(self):
