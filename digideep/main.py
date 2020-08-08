@@ -11,6 +11,14 @@ def main(session):
     ###############
     # 1. Loading
     if session.is_loading:
+        params = session.update_params({})
+        # Summary
+        logger.warn("="*50)
+        logger.warn("Session:", params["session_name"])
+        logger.warn("Message:", params["session_msg"])
+        logger.warn("Command:\n\n$", params["session_cmd"], "\n")
+        logger.warn("-"*50)
+
         runner = session.load_runner()
         # params = runner.params
     else:
@@ -41,6 +49,12 @@ def main(session):
         Runner = get_class(params["runner"]["name"])
         runner = Runner(params)
 
+    # If we are creating the session only, we do not even need to start the runner.
+    if session.is_session_only:
+        session.save_runner(runner, 0)
+        logger.fatal("Session created; exiting ...")
+        return
+    
     # 2. Initializing: It will load_state_dicts if we are in loading mode
     runner.start(session)
     
