@@ -1,4 +1,6 @@
 import os, sys, datetime, argparse
+import fcntl
+import re
 from shutil import copytree, copyfile, ignore_patterns
 import pipes
 import subprocess
@@ -29,6 +31,93 @@ def make_unique_path_session(path_base_session, prefix="session_"):
         return path_session
     except FileExistsError as e:
         return make_unique_path_session(path_base_session=path_base_session, prefix=prefix)
+
+
+def print_verbose(*args, verbose=False, **kwargs):
+    if verbose:
+        print(*args, **kwargs)
+def check_session(path, verbose=False):
+    print_verbose("Checking if provided path is a valid session.", verbose=verbose)
+    print_verbose("path =", path, verbose=verbose)
+    
+    print_verbose("  Checking if a directory ...", end="", verbose=verbose)
+    if not os.path.isdir(path):
+        print_verbose("   NO", verbose=verbose)
+        return False
+    print_verbose("   YES", verbose=verbose)
+    
+    print_verbose("  Checking if 'checkpoints' directory exists ...", end="", verbose=verbose)
+    if not os.path.isdir(os.path.join(path, "checkpoints")):
+        print_verbose("   NO", verbose=verbose)
+        return False
+    print_verbose("   YES", verbose=verbose)
+    
+    print_verbose("  Checking if 'modules' directory exists ...", end="", verbose=verbose)
+    if not os.path.isdir(os.path.join(path, "modules")):
+        print_verbose("   NO", verbose=verbose)
+        return False
+    print_verbose("   YES", verbose=verbose)
+    
+    print_verbose("  Checking if '__init__.py' file exists ...", end="", verbose=verbose)
+    if not os.path.isfile(os.path.join(path, "__init__.py")):
+        print_verbose("   NO", verbose=verbose)
+        return False
+    print_verbose("   YES", verbose=verbose)
+    
+    print_verbose("  Checking if 'params.yaml' file exists ...", end="", verbose=verbose)
+    if not os.path.isfile(os.path.join(path, "params.yaml")):
+        print_verbose("   NO", verbose=verbose)
+        return False
+    print_verbose("   YES", verbose=verbose)
+    
+    print_verbose("  Checking if 'cpanel.json' file exists ...", end="", verbose=verbose)
+    if not os.path.isfile(os.path.join(path, "cpanel.json")):
+        print_verbose("   NO", verbose=verbose)
+        return False
+    print_verbose("   YES", verbose=verbose)
+    
+    print_verbose("  Checking if 'saam.py' file exists ...", end="", verbose=verbose)
+    if not os.path.isfile(os.path.join(path, "saam.py")):
+        print_verbose("   NO", verbose=verbose)
+        return False
+    print_verbose("   YES", verbose=verbose)
+    
+    print_verbose("Provided path is a valid session.", verbose=verbose)
+    print_verbose("", verbose=verbose)
+    return True
+
+def check_checkpoint(path, verbose=False):
+    print_verbose("Checking if provided path is a valid checkpoint.", verbose=verbose)
+    print_verbose("path =", path, verbose=verbose)
+    
+    print_verbose("  Checking if a directory ...", end="", verbose=verbose)
+    if not os.path.isdir(path):
+        print_verbose("   NO", verbose=verbose)
+        return False
+    print_verbose("   YES", verbose=verbose)
+    
+    print_verbose("  Checking name pattern to match 'checkpoint-\d+' ...", end="", verbose=verbose)
+    if not bool(re.match("checkpoint-\d+", os.path.split(path)[1])):
+        print_verbose("   NO", verbose=verbose)
+        return False
+    print_verbose("   YES", verbose=verbose)
+    
+    print_verbose("  Checking if runner.pt exists ...", end="", verbose=verbose)
+    if not os.path.isfile(os.path.join(path, "runner.pt")):
+        print_verbose("   NO", verbose=verbose)
+        return False
+    print_verbose("   YES", verbose=verbose)
+    
+    print_verbose("  Checking if ../.. is a session ...", end="", verbose=verbose)
+    if not check_session(os.path.dirname(os.path.dirname(path)), verbose=False):
+        print_verbose("   NO", verbose=verbose)
+        return False
+    print_verbose("   YES", verbose=verbose)
+    
+    print_verbose("Provided path is a valid checkpoint.", verbose=verbose)
+    print_verbose("", verbose=verbose)
+    return True
+
 
 
 class ParCommand(threading.Thread):
@@ -101,12 +190,13 @@ class Session(object):
       If restoring a session, ``visdom.log`` should be copied from there and replayed.
     
 
-                                         play    resume    loading    dry-run    implemented
-    ----------------------------------------------------------------------------------------
-    Train                                 0         0         0          0            1
-    Train from a checkpoint               0         1         1          0            0
-    Play (policy initialized)             1         0         0         0/1           1
-    Play (policy loaded from checkpoint)  1         0         1         0/1           1
+                                         play    resume    loading    dry-run    session-only    |  implemented
+    -------------------------------------------------------------------------------------------- | ------------
+    Train                                 0         0         0          0            0          |      1
+    Train session barebone                0         0         0          0            1          |      1
+    Train from a checkpoint               0         1         1          0            0          |      1
+    Play (policy initialized)             1         0         0         0/1           0          |      1
+    Play (policy loaded from checkpoint)  1         0         1         0/1           0          |      1
 
     """
     def __init__(self, root_path):
@@ -117,12 +207,28 @@ class Session(object):
         # should be generated.
         self.dry_run = True if self.args["dry_run"] else False
 
-        # TODO: If loading from a checkpoint, we must copy the visdom log
-        #       from the previous path to the current one.
         self.is_loading = True if self.args["load_checkpoint"] else False
         self.is_playing = True if self.args["play"] else False
         self.is_resumed = True if self.args["resume"] else False
-                
+        self.is_session_only = True if self.args["create_session_only"] else False
+        
+        assert (self.is_loading and self.is_playing) or (self.is_loading and self.is_resumed) or (not self.is_loading), \
+            "--load-checkpoint argument should either be used with --play or --resume arguments."
+        assert (self.is_session_only and (not self.is_loading) and (not self.is_playing) and (not self.is_resumed)) or (not self.is_session_only), \
+            "--create-session-only argument cannot be used with any of the --load-checkpoint, --play, or --resume arguments."
+
+        # Automatically find the latest checkpoint if not specified
+        if self.is_loading:
+            if check_checkpoint(self.args["load_checkpoint"], verbose=True):
+                pass
+            elif check_session(self.args["load_checkpoint"], verbose=True):
+                last_checkpoint = sorted([int(d.replace("checkpoint-", "")) for d in os.listdir(os.path.join(self.args["load_checkpoint"], "checkpoints"))])[-1]
+                self.args["load_checkpoint"] = os.path.join(self.args["load_checkpoint"], "checkpoints", "checkpoint-"+str(last_checkpoint))
+            else:
+                raise ValueError("In '--load-checkpoint path', path is neither a valid checkpoint nor a valid session.")
+        
+
+        
         # TODO: Change the path for loading the packages?
         # sys.path.insert(0, '/path/to/whatever')
 
@@ -147,8 +253,6 @@ class Session(object):
             directory = os.path.dirname(os.path.dirname(self.args["load_checkpoint"]))
             self.state['path_base_sessions'] = os.path.split(directory)[0]
             self.args['session_name'] = os.path.split(directory)[1]
-        elif self.is_loading:
-            raise Exception("--load-checkpoint should be used either with --play or --resume.")
         else:
             # OK, we are loading from a checkpoint, just create session from scratch.
             # self.state['path_root_session']  = self.args["session_path"]
@@ -168,13 +272,14 @@ class Session(object):
         # 2. Create a unique 'path_session':
         if not self.dry_run:
             if self.args['session_name']:
+                # If is_loading then this line will be executed ...
                 self.state['path_session'] = os.path.join(self.state['path_base_sessions'], self.args["session_name"])
             else:
                 self.state['path_session'] = make_unique_path_session(self.state['path_base_sessions'], prefix="session_")
         else:
             self.state['path_session'] = os.path.join(self.state['path_base_sessions'], "no_session")
         
-        
+        # This will be equal to args['session_name'] if that has existed previously.
         self.state['session_name'] = os.path.split(self.state['path_session'])[-1]
 
         self.state['path_checkpoints'] = os.path.join(self.state['path_session'], 'checkpoints')
@@ -189,7 +294,13 @@ class Session(object):
         # self.state['file_visdom'] = os.path.join(self.state['path_session'], 'visdom.log')
         self.state['file_varlog'] = os.path.join(self.state['path_session'], 'varlog.json')
         self.state['file_prolog'] = os.path.join(self.state['path_session'], 'prolog.json')
+        self.state['lock_running'] = os.path.join(self.state['path_session'], 'running.lock')
 
+        # Here, the session path has been created or it existed.
+        # Now make sure only one instance passes from this point.
+        self.check_singleton_instance()
+
+        
         # 3. Creating the rest of paths:
         if not self.is_playing and not self.is_resumed and not self.dry_run:
             os.makedirs(self.state['path_checkpoints'])
@@ -205,8 +316,7 @@ class Session(object):
         # self.initVisdom()
         # TODO: We don't need the "SaaM" when are loading from a checkpoint.
         # if not self.is_playing:
-        if not self.is_loading:
-            self.createSaaM()
+        self.createSaaM()
         #################
         self.runMonitor() # Monitor CPU/GPU/RAM
         self.set_device()
@@ -227,7 +337,7 @@ class Session(object):
             print(':: This session has no footprints. Use without `--dry-run` to store results.')
 
     def finalize(self):
-         pass
+        logger.fatal("\n",'='*50,"\n","\n"*5," "*15,"END OF SIMULATION\n","\n"*5,"="*50,"\n"*5, sep="")
     def initLogger(self):
         """
         This function sets the logger level and file.
@@ -296,7 +406,7 @@ class Session(object):
         This function will make the session act like a python module.
         The user can then simply import the module for inference.
         """
-        if self.dry_run:
+        if self.dry_run or self.is_loading:
             return
         # Copy the all modules
         modules = set(self.args["save_modules"])
@@ -368,24 +478,66 @@ class Session(object):
     def get_device(self):
         return self.device
 
+    # def create_running_lock(self):
+        # with open(self.state['lock_running'], 'w') as f:
+        #     print("", file=f)
+
+    ####################################
+    ## Locks: done.lock, running.lock ##
+    ####################################
+    def check_singleton_instance(self):
+        if not self.is_loading:
+            # Create running.lock for the first time
+            with open(self.state['lock_running'], 'w') as f:
+                print("", file=f)
+        
+        lock_file_pointer = os.open(self.state['lock_running'], os.O_WRONLY)
+        try:
+            fcntl.lockf(lock_file_pointer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except IOError:
+            print("ERROR: Another instance is already running. Make sure to exit from the other one to continue.", file=sys.stderr)
+            sys.exit(2)
+
     def mark_as_done(self):
         with open(os.path.join(self.state['path_session'], 'done.lock'), 'w') as f:
             print("", file=f)
-    
-    def rsync(self, source, target):
-        t = ParCommand(['rsync', '-azP', '--delete', '--perms', '--chmod=ugo+rwx', source, target], logger)
-        t.start()
-        return t
-    def take_memory_snapshop(self, memroot, name):
-        target = os.path.join(self.state['path_memsnapshot'], name) + "/"
-        t = self.rsync(source=memroot+"/", target=target)
-        # Join, because memory will keep changing during "rsync".
-        t.join()
-    def load_memory_snapshot(self, memroot, name):
-        source = os.path.join(self.state['path_memsnapshot'], name) + "/"
-        t = self.rsync(source=source, target=memroot+"/")
-        # Join, because we cannot proceed without this task already completed.
-        t.join()
+
+
+
+
+    # def task_rsync(self, source, target):
+    #     # -a: Archive
+    #     # -z: Compress (makes it very slow)
+    #     # -P: Continue partials
+    #     t = ParCommand(['rsync', '-aP', '--delete', '--perms', '--chmod=ugo+rwx', source, target], logger)
+    #     t.start()
+    #     return t
+    # def task_remove(self, target):
+    #     # Clean target first
+    #     t = ParCommand(['rm', '-rf', target], logger)
+    #     t.start()
+    #     return t
+    # def task_copy(self, source, target):
+    #     t = ParCommand(['cp', '-r', source, target], logger)
+    #     t.start()
+    #     return t
+    # def task_move(self, source, target):
+    #     t = ParCommand(['mv', source, target], logger)
+    #     t.start()
+    #     return t
+
+    # def take_memory_snapshop(self, memroot, name):
+    #     target = os.path.join(self.state['path_memsnapshot'], name)
+    #     t0 = self.task_remove(target)
+    #     t0.join()
+    #     t = self.task_move(source=memroot, target=target)
+    #     # Join, because memory will keep changing during "rsync".
+    #     t.join()
+    # def load_memory_snapshot(self, memroot, name):
+    #     source = os.path.join(self.state['path_memsnapshot'], name)
+    #     t = self.task_copy(source=source+"/*", target=memroot+"/")
+    #     # Join, because we cannot proceed without this task already completed.
+    #     t.join()
 
     #################################
     # Apparatus for model save/load #
@@ -393,6 +545,7 @@ class Session(object):
     # TODO: Copying the visdom.log file to the current session for replaying.
     def load_states(self):
         filename = os.path.join(self.args["load_checkpoint"], "states.pt")
+        logger.info("Loading states from file:" + filename)
         states = torch.load(filename, map_location=self.device)
         return states
     def load_runner(self):
@@ -401,6 +554,7 @@ class Session(object):
         # Existence is checked but validity is not. How is that?
         try:
             filename = os.path.join(self.args["load_checkpoint"], "runner.pt")
+            logger.info("Loading runner from file:" + filename)
             runner = pickle.load(open(filename,"rb"))
         except Exception as ex:
             logger.fatal("Error loading from checkpoint:", ex)
@@ -442,7 +596,8 @@ class Session(object):
         parser.add_argument('--load-checkpoint', metavar=('<path>'), default='', type=str, help="Load a checkpoint to resume training from that point.")
         parser.add_argument('--play', action="store_true", help="Will play the stored policy.")
         parser.add_argument('--resume', action="store_true", help="Will resume training the stored policy.")
-        parser.add_argument('--dry-run', action="store_true", help="If used no footprints will be stored on disc whatsoever.")
+        parser.add_argument('--create-session-only', action="store_true", help="If used, only the barebone session will be created and nt training/evaluation/loading will happen.")
+        parser.add_argument('--dry-run', action="store_true", help="If used, no footprints will be stored on disc whatsoever.")
         ## Session
         parser.add_argument('--session-path', metavar=('<path>'), default='/tmp/digideep_sessions', type=str, help="The path to store the sessions. Default is in /tmp")
         parser.add_argument('--session-name', metavar=('<name>'), default='', type=str, help="A default name for the session. Random name if not provided.")
