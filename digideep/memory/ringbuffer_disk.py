@@ -35,21 +35,24 @@ class Memory:
 
         
         # Make memory tmp root directory
-        path = self.params.get("mempath", "/tmp")
-        # self.state['memroot'] = mkdtemp(dir=path)
-        self.memroot = mkdtemp(dir=path)
-    
-    def save_snapshot(self):
-        logger.warn("Taking memory snapshot started ...")
-        self.session.take_memory_snapshop(memroot=self.memroot, name=self.params["name"])
-        logger.warn("Taking memory snapshot finished ...")
-    def load_snapshot(self):
-        logger.warn("Loading memory from snapshot started ...")
-        self.session.load_memory_snapshot(self.memroot, name=self.params["name"])
-        logger.warn("Loading memory from snapshot finished.")
+        # path = self.params.get("mempath", "/tmp")
+        # # self.state['memroot'] = mkdtemp(dir=path)
+        # self.memroot = mkdtemp(dir=path)
 
-        # Opening all the datasets into self.buffer
-        self.load_datasets()
+        self.memroot = os.path.join(self.session.state['path_memsnapshot'], self.params["name"])
+    
+    # def save_snapshot(self):
+    #     logger.warn("Taking memory snapshot started ...")
+    #     self.session.take_memory_snapshop(memroot=self.memroot, name=self.params["name"])
+    #     logger.warn("Taking memory snapshot finished ...")
+    # def load_snapshot(self):
+    #     logger.warn("Loading memory from snapshot started ...")
+    #     self.session.load_memory_snapshot(self.memroot, name=self.params["name"])
+    #     logger.warn("Loading memory from snapshot finished.")
+    #
+    #     # Opening all the datasets into self.buffer
+    #     self.load_datasets()
+
 
     def state_dict(self):
         # NOTE: We do not store buffer
@@ -57,6 +60,9 @@ class Memory:
     def load_state_dict(self, state_dict):
         # NOTE: We do not read buffer
         self.state.update(state_dict["state"])
+        
+        # NOTE: This should be removed from here if "load_snapshot" is used.
+        self.load_datasets()
     
     def get_valid_index(self, index):
         return index % self.buffer_size
@@ -137,6 +143,8 @@ class Memory:
             return np.iinfo(dtype).min
     
     def load_datasets(self):
+        # NOTE: Very important, memory will not throw any exceptions if a key is added to it after loading!
+        #       In other words, loading memory can fail silently!
         filelist = []
         keyslist = []
         for root, dirs, files in os.walk(self.memroot):
@@ -144,8 +152,13 @@ class Memory:
                 filelist += [os.path.join(root, file)]
                 key = os.path.splitext("/"+os.path.relpath(os.path.join(root, file), self.memroot))[0]
                 keyslist += [key]
+
         for key, filename in zip(keyslist, filelist):
             self.buffer[key] = np.memmap(filename, mode='r+', shape=self.state['keys'][key]['shape'], dtype=self.state['keys'][key]['dtype'])
+            logger.warn("[Memory] Loading from disk: '{key}' (shape:{shape}), (dtype:{dtype}).".format(
+                        key=key,
+                        dtype=self.state['keys'][key]['dtype'],
+                        shape=self.state['keys'][key]['shape']))
         
 
     def create_dataset(self, key, dtype, shape):
@@ -164,7 +177,11 @@ class Memory:
         
         # Give a report
         size = dtype.itemsize * np.prod(shape) / 1024. / 1024. # In MB
-        logger.warn("[{}] with dtype: {} and shape {} was stored on disk: size: {:9.1f} MB.".format(key, str(dtype), shape, size))
+        logger.warn("[Memory] Storing on disk: '{key}' (shape:{shape}), (dtype:{dtype}), (size:{size:9.1f} MB).".format(
+                    key=key, 
+                    shape=shape,
+                    dtype=dtype,
+                    size=size))
         # TODO: Check the shape of new data and complain if not consistent.
         
         
