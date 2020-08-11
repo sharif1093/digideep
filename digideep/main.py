@@ -50,9 +50,9 @@ def main(session):
         runner = Runner(params)
 
     # If we are creating the session only, we do not even need to start the runner.
+    session.save_runner(runner, 0)
     if session.is_session_only:
-        session.save_runner(runner, 0)
-        logger.fatal("Session created; exiting ...")
+        logger.fatal("Session was created; exiting ...")
         return
     
     # 2. Initializing: It will load_state_dicts if we are in loading mode
