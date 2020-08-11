@@ -11,6 +11,7 @@ from digideep.utility.toolbox import get_class
 from digideep.utility.json_encoder import JsonDecoder
 from .variable_plotter import VarPlot
 from .profile_plotter import ProPlot
+from .monitor_plotter import MonPlot
 
 
 
@@ -59,6 +60,10 @@ if __name__=="__main__":
     if args.type == "variable":
         pp = VarPlot(loaders, output_dir, **args.options)
         for key in args.options.get("key", ["/reward/train/episodic"]):
+            pp.plot(key)
+    elif args.type == "monitor":
+        pp = MonPlot(loaders, output_dir, **args.options)
+        for key in args.options.get("key", ["/cpu/per"]):
             pp.plot(key)
     elif args.type == "profiler":
         pp = ProPlot(loaders, output_dir, **args.options)
