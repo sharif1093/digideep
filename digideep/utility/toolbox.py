@@ -35,6 +35,9 @@ def dump_dict_as_yaml(filename, dic):
 def load_yaml_as_dict(filename):
     f = open(filename, 'r')
     try:
+        # TODO: PyYAML can become faster by using CLoader: (can we replace UnsafeLoader safely with it?)
+        #    from yaml import CLoader as Loader, CDumper as Dumper
+        #    https://stackoverflow.com/questions/27743711/can-i-speedup-yaml
         # https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
         # dic = yaml.load(f, Loader=yaml.FullLoader)
         dic = yaml.load(f, Loader=yaml.UnsafeLoader)
