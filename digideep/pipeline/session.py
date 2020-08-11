@@ -201,6 +201,7 @@ class Session(object):
     """
     def __init__(self, root_path):
         self.parse_arguments()
+        self.state = {}
 
         # If '--dry-run' is specified no reports should be generated. It is not relevant to whether
         # we are loading from a checkpoint or running from scratch. If dry-run is there no reports
@@ -218,15 +219,16 @@ class Session(object):
             "--create-session-only argument cannot be used with any of the --load-checkpoint, --play, or --resume arguments."
 
         # Automatically find the latest checkpoint if not specified
+        self.state['checkpoint_name'] = None
         if self.is_loading:
             if check_checkpoint(self.args["load_checkpoint"], verbose=True):
-                pass
+                self.state['checkpoint_name'] = os.path.split(self.args["load_checkpoint"])[1]
             elif check_session(self.args["load_checkpoint"], verbose=True):
                 last_checkpoint = sorted([int(d.replace("checkpoint-", "")) for d in os.listdir(os.path.join(self.args["load_checkpoint"], "checkpoints"))])[-1]
                 self.args["load_checkpoint"] = os.path.join(self.args["load_checkpoint"], "checkpoints", "checkpoint-"+str(last_checkpoint))
+                self.state['checkpoint_name'] = "checkpoint-" + str(last_checkpoint)
             else:
                 raise ValueError("In '--load-checkpoint path', path is neither a valid checkpoint nor a valid session.")
-        
 
         
         # TODO: Change the path for loading the packages?
@@ -236,7 +238,7 @@ class Session(object):
         #     # Force visdom ON if "--monitor-cpu" or "--monitor-gpu" are provided.
         #     self.args["visdom"] = True
 
-        self.state = {}
+        
         # Root: Indicates where we are right now
         self.state['path_root'] = os.path.split(root_path)[0]
         
@@ -294,6 +296,7 @@ class Session(object):
         # self.state['file_visdom'] = os.path.join(self.state['path_session'], 'visdom.log')
         self.state['file_varlog'] = os.path.join(self.state['path_session'], 'varlog.json')
         self.state['file_prolog'] = os.path.join(self.state['path_session'], 'prolog.json')
+        self.state['file_monlog'] = os.path.join(self.state['path_session'], 'monlog.json')
         self.state['lock_running'] = os.path.join(self.state['path_session'], 'running.lock')
 
         # Here, the session path has been created or it existed.
@@ -432,13 +435,13 @@ class Session(object):
         """
         This function will load the monitoring tool for CPU and GPU utilization and memory consumption.
         """
-        # TODO: StatVisdom is deprecated. Update the following code.
-        # if self.args["monitor_cpu"] or self.args["monitor_gpu"]:
-        #     from digideep.utility.stats import StatVizdom
-        #     sv = StatVizdom(monitor_cpu=self.args["monitor_cpu"], monitor_gpu=self.args["monitor_gpu"])
-        #     sv.start()
-        pass
-
+        if (not self.args["no_monitor_cpu"]) or (not self.args["no_monitor_gpu"]):
+            from digideep.utility.stats import StatLogger
+            st = StatLogger(monitor_cpu=not self.args["no_monitor_cpu"],
+                            monitor_gpu=not self.args["no_monitor_gpu"],
+                            output=self.state['file_monlog'])
+                            # interval=self.args["monitor_interval"], window=self.args["monitor_window"])
+            st.start()
     
     def update_params(self, params):
         params['session_name'] = self.state['session_name']
@@ -611,8 +614,10 @@ class Session(object):
         ## Tensorboard
         parser.add_argument('--tensorboard', action='store_true', help="Whether to use Tensorboard or not!")
         ## Monitor Thread
-        parser.add_argument('--monitor-cpu', action="store_true", help="Use to monitor CPU resource statistics on Visdom.")
-        parser.add_argument('--monitor-gpu', action="store_true", help="Use to monitor GPU resource statistics on Visdom.")
+        parser.add_argument('--no-monitor-cpu', action="store_true", help="Specify if you do not want CPU usage to be monitored.")
+        parser.add_argument('--no-monitor-gpu', action="store_true", help="Specify if you do not want GPU usage to be monitored.")
+        # parser.add_argument('--monitor-interval', metavar=('<n>'), default=1, type=int, help="The interval for sampling cpu/gpu monitoring data.")
+        # parser.add_argument('--monitor-window', metavar=('<n>'), default=10, type=int, help="The window size for sampling cpu/gpu monitoring data.")
         ## Parameters
         parser.add_argument('--params', metavar=('<name>'), default='', type=str, help="Choose the parameter set.")
         parser.add_argument('--cpanel', metavar=('<json dictionary>'), default=r'{}', type=JsonDecoder, help="Set the parameters of the cpanel by a json dictionary.")
