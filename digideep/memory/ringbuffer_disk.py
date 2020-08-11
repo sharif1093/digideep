@@ -4,6 +4,7 @@ import numpy as np
 from sys import getsizeof
 from digideep.utility.logging import logger
 from tempfile import mkdtemp
+import ctypes
 
 from PIL import Image
 
@@ -40,19 +41,29 @@ class Memory:
         # self.memroot = mkdtemp(dir=path)
 
         self.memroot = os.path.join(self.session.state['path_memsnapshot'], self.params["name"])
-    
-    # def save_snapshot(self):
-    #     logger.warn("Taking memory snapshot started ...")
-    #     self.session.take_memory_snapshop(memroot=self.memroot, name=self.params["name"])
-    #     logger.warn("Taking memory snapshot finished ...")
-    # def load_snapshot(self):
-    #     logger.warn("Loading memory from snapshot started ...")
-    #     self.session.load_memory_snapshot(self.memroot, name=self.params["name"])
-    #     logger.warn("Loading memory from snapshot finished.")
-    #
-    #     # Opening all the datasets into self.buffer
-    #     self.load_datasets()
 
+        # NOTE: This should be tested before integration.
+        # # NOTE: This resolves the issue for random access memmap loading.
+        # #       See: https://github.com/numpy/numpy/issues/13172
+        # madvise = ctypes.CDLL("libc.so.6").madvise
+        # madvise.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int]
+        # madvise.restype = ctypes.c_int
+    
+    def save_snapshot(self):
+        logger.warn("Taking memory snapshot started ...")
+        logger.warn("Doing nothing ...")
+        # TODO: Enable if snapshot in different places is eligible.
+        # self.session.take_memory_snapshop(memroot=self.memroot, name=self.params["name"])
+        logger.warn("Taking memory snapshot finished ...")
+
+    def load_snapshot(self):
+        logger.warn("Loading memory from snapshot started ...")
+        logger.warn("Doing nothing ...")
+        # TODO: Enable if snapshot should be moved from a remote place to the local machine.
+        # self.session.load_memory_snapshot(self.memroot, name=self.params["name"])
+        logger.warn("Loading memory from snapshot finished.")
+        # Opening all the datasets into self.buffer
+        self.load_datasets()
 
     def state_dict(self):
         # NOTE: We do not store buffer
@@ -60,9 +71,6 @@ class Memory:
     def load_state_dict(self, state_dict):
         # NOTE: We do not read buffer
         self.state.update(state_dict["state"])
-        
-        # NOTE: This should be removed from here if "load_snapshot" is used.
-        self.load_datasets()
     
     def get_valid_index(self, index):
         return index % self.buffer_size
