@@ -47,16 +47,15 @@ class Runner:
 
     def on_sigint_received(self, signalNumber, frame):
         print("") # To print on the next line where ^C is printed.
-        logger.fatal("Received CTRL+C. Will terminate process after cycle is over.")
-        self.ready_for_termination = True
-        self.save_major_checkpoint = True
-
         self.ctrl_c_count += 1
-
         if self.ctrl_c_count == 1:
+            logger.fatal("Received CTRL+C. Will terminate process after cycle is over.")
             logger.fatal("Press CTRL+C one more time to exit without saving.")
+            self.ready_for_termination = True
+            self.save_major_checkpoint = True
         elif self.ctrl_c_count == 2:
             # NOTE: Kill all subprocesses
+            logger.fatal("Received CTRL+C for the second time. Will terminate immediately.")
             self.ready_for_termination = True
             self.save_major_checkpoint = False
             sys.exit(1)
@@ -258,12 +257,10 @@ class Runner:
     ###
     def save_final_checkpoint(self):
         self.save(forced=True)
-        # # Store snapshots for all memories only if simulation ended gracefully.
-        # for memory_name in self.memory:
-        #     if hasattr(self.memory[memory_name], "save_snapshot"):
-        #         self.memory[memory_name].save_snapshot()
-        # # TODO: Mark as major check
-
+        # Store snapshots for all memories only if simulation ended gracefully.
+        for memory_name in self.memory:
+            if hasattr(self.memory[memory_name], "save_snapshot"):
+                self.memory[memory_name].save_snapshot(self.state["i_epoch"])
 
     def save(self, forced=False):
         """
@@ -283,13 +280,14 @@ class Runner:
         if self.state["loading"]:
             state_dict = self.session.load_states()
             self.load_state_dict(state_dict)
-            # self.load_memory()
-            # self.state["loading"] = False
-    # def load_memory(self):
-    #     if self.session.is_resumed:
-    #         for memory_name in self.memory:
-    #             if hasattr(self.memory[memory_name], "load_snapshot"):
-    #                 self.memory[memory_name].load_snapshot()
+            self.load_memory()
+            # We leave loading = True. All future loadings would be either resume or play.
+
+    def load_memory(self):
+        if self.session.is_resumed:
+            for memory_name in self.memory:
+                if hasattr(self.memory[memory_name], "load_snapshot"):
+                    self.memory[memory_name].load_snapshot()
     ###############################################################
 
     def train_cycle(self):
@@ -305,7 +303,6 @@ class Runner:
                 with KeepTime(agent_name):
                     self.agents[agent_name].update()
 
-    
     def train(self):
         """
         The function that runs the training loop.
