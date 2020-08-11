@@ -1,3 +1,5 @@
+import os, shutil
+import time
 import numpy as np
 from sys import getsizeof
 from digideep.utility.logging import logger
@@ -31,6 +33,61 @@ class Memory:
 
         self.counter = 0
     
+
+    def save_snapshot(self, index):
+        t = time.time()
+        logger.warn("Taking memory ({}) snapshot started ...".format(self.params["name"]))
+        # NOTE: Save self.buffer under memsnapshot/checkpoint-X/<memory-name>.npz
+        #                     or under memsnapshot/checkpoint-X/<name>/ tree of ".npy" files
+        dirname = os.path.join(self.session.state['path_memsnapshot'], "checkpoint-" + str(index))
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        filename = os.path.join(dirname, self.params["name"])
+        logger.warn("Saving memory to:", filename+".npz")
+        np.savez(filename, **self.buffer)
+        logger.warn("Taking memory snapshot finished in {:.2f} seconds...".format(time.time() - t))
+        # NOTE: Now that we have successfully saved current checkpoint, we can remove old checkpoints.
+        if not self.params["keep_old_checkpoints"]:
+            # Go and find the memory checkpoint that we started from.
+            if self.session.state["checkpoint_name"] and self.session.is_loading:
+                dirname = os.path.join(self.session.state["path_memsnapshot"], self.session.state["checkpoint_name"])
+                if os.path.exists(dirname):
+                    shutil.rmtree(dirname)
+
+    def load_snapshot(self):
+        t = time.time()
+        logger.warn("Loading memory ({}) from snapshot started ...".format(self.params["name"]))
+        dirname = os.path.join(self.session.state['path_memsnapshot'], self.session.state['checkpoint_name'])
+        filename = os.path.join(dirname, self.params["name"] + ".npz")
+        logger.warn("Loading memory from:", filename)
+        loading = np.load(filename)
+        for key in loading.files:
+            self.buffer[key] = loading[key]
+            logger.info("[Memory] Loading from disk: '{key}' (shape:{shape}), (dtype:{dtype}).".format(
+                        key=key,
+                        dtype=self.buffer[key].dtype,
+                        shape=self.buffer[key].shape))
+        
+        logger.warn("Loading memory from snapshot finished in {:.2f} seconds...".format(time.time() - t))
+
+    # def load_datasets(self):
+    #     # NOTE: Very important, memory will not throw any exceptions if a key is added to it after loading!
+    #     #       In other words, loading memory can fail silently!
+    #     filelist = []
+    #     keyslist = []
+    #     for root, dirs, files in os.walk(self.memroot):
+    #         for file in files:
+    #             filelist += [os.path.join(root, file)]
+    #             key = os.path.splitext("/"+os.path.relpath(os.path.join(root, file), self.memroot))[0]
+    #             keyslist += [key]
+    #
+    #     for key, filename in zip(keyslist, filelist):
+    #         self.buffer[key] = np.memmap(filename, mode='r+', shape=self.state['keys'][key]['shape'], dtype=self.state['keys'][key]['dtype'])
+    #         logger.warn("[Memory] Loading from disk: '{key}' (shape:{shape}), (dtype:{dtype}).".format(
+    #                     key=key,
+    #                     dtype=self.state['keys'][key]['dtype'],
+    #                     shape=self.state['keys'][key]['shape']))
+
     def state_dict(self):
         # TODO: In order to save self.buffer, implement the save_snapshot/load_snapshot interface.
         # return {"state":self.state, "buffer":self.buffer}
