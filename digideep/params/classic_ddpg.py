@@ -45,6 +45,7 @@ cpanel["cuda_deterministic"] = False # With TRUE we MIGHT get more deterministic
 
 #####################
 ### Memory Parameters
+cpanel["keep_old_checkpoints"] = False
 cpanel["memory_size_in_chunks"] = int(1e6) # SHOULD be 1 for on-policy methods that do not have a replay buffer.
 # SUGGESTIONS: 2^0 (~1e0) | 2^3 (~1e1) | 2^7 (~1e2) | 2^10 (~1e3) | 2^13 (~1e4) | 2^17 (1e5) | 2^20 (~1e6)
 
@@ -250,7 +251,11 @@ def gen_params(cpanel):
 
     params["memory"]["train"] = {}
     params["memory"]["train"]["type"] = "digideep.memory.ringbuffer.Memory"
-    params["memory"]["train"]["args"] = {"name":"train", "chunk_sample_len":cpanel["n_steps"], "buffer_chunk_len":cpanel["memory_size_in_chunks"], "overrun":1}
+    params["memory"]["train"]["args"] = {"name":"train",
+                                         "keep_old_checkpoints":cpanel.get("keep_old_checkpoints", False),
+                                         "chunk_sample_len":cpanel["n_steps"],
+                                         "buffer_chunk_len":cpanel["memory_size_in_chunks"],
+                                         "overrun":1}
     # chunk_sample_len: Number of samples in a chunk
     # buffer_chunk_len: Number of chunks in the buffer
     ##############################################
