@@ -75,7 +75,7 @@ class VarPlot (BasePlotter):
 
         """
         fig, ax = self.init_plot()
-        abscissa_key = self.options.get("abscissa_key", "episode") # episode | epoch | frame
+        abscissa_key = self.options.get("abscissa_key", "episode") # episode | epoch | frame | clock
         limits = [None, None, None, None]
 
         for subloaders in self.loaders:
@@ -121,6 +121,9 @@ class VarPlot (BasePlotter):
         abscissa_all = [var[key][abscissa_key] for var in varlogs]
         abscissa_all_trimmed = trim_to_shortest(abscissa_all)
         abscissa = abscissa_all_trimmed[0]
+
+        if abscissa_key == "clock":
+            abscissa = abscissa - abscissa[0]
 
         ##################################
         ### Plot and fill the variance ###
@@ -173,6 +176,10 @@ class VarPlot (BasePlotter):
             # TODO: Consider other cases where abscissa can have "K" unit, etc.
             # frame_unit = self.options.get("frame_unit", "m")
             xlabels = ['{:,.2f}'.format(x) + 'M' for x in ax.get_xticks()/1e6]
+            ax.set_xticklabels(xlabels)
+        elif abscissa_key == "clock":
+            xticks = ax.get_xticks()
+            xlabels = ['{:.2f}'.format( float(x)/60. ) + 'm' for x in xticks]
             ax.set_xticklabels(xlabels)
 
         # Set the legends
