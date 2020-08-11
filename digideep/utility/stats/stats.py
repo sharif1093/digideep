@@ -13,7 +13,7 @@ import os
 ###################
 
 class StatLogger():
-    def __init__(self, monitor_cpu=True, monitor_gpu=True, output="/tmp/monitor.log", interval=2.0):
+    def __init__(self, monitor_cpu=True, monitor_gpu=True, output="/tmp/monitor.log", interval=2.0, window=10):
         self.output = output
         self.monitor = Monitor()
         self.monitor.set_output_file(self.output)
@@ -21,6 +21,7 @@ class StatLogger():
         self.monitor_cpu = monitor_cpu
         self.monitor_gpu = monitor_gpu
 
+        # TODO: Why do we need this?
         if not "CUDA_VISIBLE_DEVICES" in os.environ:
             self.monitor_gpu = False
 
@@ -29,6 +30,7 @@ class StatLogger():
         if self.monitor_gpu:
             self.gpu_count = get_gpu_count()
 
+        self.window = window
         self.interval = interval # seconds
         self.timer = Timer(self._updater, self.interval)
 
@@ -46,13 +48,13 @@ class StatLogger():
             # Get CPU memory
             cpus = get_cpu_stats()
 
-            self.monitor("/cpu/per", cpus["total_per_cpu"]) # Percent
-            self.monitor("/cpu/all/total", cpus["total_cpu"]) # Percent
-            # self.monitor("/cpu/all/cpu", cpus["cpu"])
+            self.monitor("/cpu/per", cpus["total_per_cpu"], window=self.window) # Percent
+            self.monitor("/cpu/all/total", cpus["total_cpu"], window=self.window) # Percent
+            # self.monitor("/cpu/all/cpu", cpus["cpu"], window=self.window)
 
-            self.monitor("/cpu/memory/total", cpus["total_mem"]) # MB
-            self.monitor("/cpu/memory/used", cpus["used_mem"]) # MB
-            self.monitor("/cpu/memory/mem", cpus["mem"])
+            self.monitor("/cpu/memory/total", cpus["total_mem"], window=self.window) # MB
+            self.monitor("/cpu/memory/used", cpus["used_mem"], window=self.window) # MB
+            self.monitor("/cpu/memory/mem", cpus["mem"], window=self.window)
             
             
         if self.monitor_gpu:
@@ -62,9 +64,9 @@ class StatLogger():
 
             gpus = get_gpu_stats()
             try:
-                self.monitor("/gpu/load", gpus["load"]) # Percent
-                self.monitor("/gpu/memory/total", gpus["memoryTotal"]) # MB
-                self.monitor("/gpu/memory/used",  gpus["memoryUsed"]) # MB
+                self.monitor("/gpu/load", gpus["load"], window=self.window) # Percent
+                self.monitor("/gpu/memory/total", gpus["memoryTotal"], window=self.window) # MB
+                self.monitor("/gpu/memory/used",  gpus["memoryUsed"], window=self.window) # MB
             except:
                 # import warnings
                 # warnings.warn("There was a problematic value for gpus!")
@@ -75,7 +77,7 @@ class StatLogger():
 
 
 if __name__=="__main__":
-    st = StatLogger()
+    st = StatLogger(interval=1.0)
     st.start()
     while(1):
         # This infinite loop causes one CPU to work full-load.
