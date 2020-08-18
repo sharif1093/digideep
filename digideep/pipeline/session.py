@@ -489,6 +489,8 @@ class Session(object):
     ## Locks: done.lock, running.lock ##
     ####################################
     def check_singleton_instance(self):
+        if self.is_playing:
+            return
         if not self.is_loading:
             # Create running.lock for the first time
             with open(self.state['lock_running'], 'w') as f:
