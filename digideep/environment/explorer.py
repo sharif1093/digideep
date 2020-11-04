@@ -180,15 +180,13 @@ class Explorer:
                     for agent_name in self.agents:
                         agents[agent_name] = self.agents[agent_name].random_action_generator(self.envs, self.params["num_workers"])
                 else:
-                    # Take REAL actions if warm-starting
+                    # Take REAL actions if not warm-starting
                     for agent_name in self.agents:
                         action_generator = self.agents[agent_name].action_generator
                         agents[agent_name] = action_generator(observations, hidden_state[agent_name], masks, deterministic=self.params["deterministic"])
-
             else:
                 publish_agents = False
             # We are saving the "new" hidden_state now.
-
 
             # for agent_name in self.agents:
             #     if (not final_step) or (self.params["final_action"]):
