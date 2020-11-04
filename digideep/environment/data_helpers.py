@@ -223,7 +223,7 @@ def convert_time_to_batch_major(episode):
     episode_batch = {}
     for key in episode.keys():
         try:
-            val = None
+            # val = None
             # print(key, "=", episode[key])
             entry_data_type = episode[key][0].dtype
             #TODO: Should we copy?
@@ -310,7 +310,7 @@ def list_of_dicts_to_flattened_dict_of_lists(List, length):
         >>> List = [{'a':{'f':[1,2], 'g':[7,8]}, 'b':[-1,-2], 'info':[10,20]},
                     {'a':{'f':[3,4], 'g':[9,8]}, 'b':[-3,-4], 'step':[80,90]}]
         >>> Length = 2
-        >>> list_of_dicts_to_flattened_dict_of_lists(List, length)
+        >>> list_of_dicts_to_flattened_dict_of_lists(List, Length)
         {'/a/f':[[1,2],[3,4]],
         '/a/g':[[7,8],[9,8]],
             'b':[[-1,-2],[-3,-4]],
@@ -340,13 +340,15 @@ def list_of_dicts_to_flattened_dict_of_lists(List, length):
         return List
     Dict = OrderedDict()
     for i in range(len(List)):
-        update_dict_of_lists(Dict, flatten_dict(List[i]), index=i)    
-    # Here, complete_dict_of_list cannot be in the loop.
-    # Since the new keys may arrive in a new list index.
-    # For instance 'step' in List[1] in the above example.
-    # And the "chunky" data will cause problems. Since
-    # we may have a chunk of data without a key, but the
-    # key arrives in a new chunk of data.
+        update_dict_of_lists(Dict, flatten_dict(List[i]), index=i)
+        
+        complete_dict_of_list(Dict, length=i+1)
+        # BUG: Lack of this created a bug in multi-worker cases. We must complete Dict before next step
+        # For some reason, I refrained from including this into the loop as follows:
+        # FIXME: Here, complete_dict_of_list cannot be in the loop. Since the new keys may arrive in a new list index.
+        # For instance 'step' in List[1] in the above example. And the "chunky" data will cause problems. Since
+        # we may have a chunk of data without a key, but the key arrives in a new chunk of data.
+    
     # Here, we are outputing complete chunks of data.
     complete_dict_of_list(Dict, length=length)
     return Dict
