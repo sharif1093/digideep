@@ -60,13 +60,13 @@ class Loader:
         return os.path.join(self.root_path, "prolog.json")
     def getPrologLoader(self):
         return LogLoader(self._getPrologPath)
-    
+
     @property
     def _getMonlogPath(self):
         return os.path.join(self.root_path, "monlog.json")
     def getMonlogLoader(self):
         return LogLoader(self._getMonlogPath)
-        
+
         
     
     # NOTE: What is this used for?
