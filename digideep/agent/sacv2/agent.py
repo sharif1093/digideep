@@ -204,7 +204,7 @@ class Agent(AgentBase):
             qf1 = self.policy.model["critic1"](state, action)
             qf2 = self.policy.model["critic2"](state, action)
 
-            # # JQ = 𝔼(st,at)~D[0.5(Q(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
+            # # JQ = E(st,at)~D[0.5(Q(st,at) - r(st,at) - γ(Est+1~p[V(st+1)]))^2]
             qf1_loss = F.mse_loss(qf1, next_q_value)
             qf2_loss = F.mse_loss(qf2, next_q_value)
 
