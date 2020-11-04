@@ -102,7 +102,8 @@ class MakeEnvironment:
             except Exception as ex:
                 logger.fatal("While importing user module:", ex)
                 exit()
-        elif (params["from_params"]) and (not MakeEnvironment.registered):
+        # elif (params["from_params"]) and (not MakeEnvironment.registered):
+        elif (params["from_params"]) and (not params["name"] in registry.env_specs):
             try:
                 registry.register(**params["register_args"])
                 MakeEnvironment.registered = True
@@ -121,6 +122,7 @@ class MakeEnvironment:
         def _f():
             # The header of gym.make(.): `def make(id, **kwargs)`
             env = gym.make(self.params["name"], **extra_env_kwargs)
+            # TODO: Use gym.seeding to generate good and independent random seeds
             env.seed(self.seed + rank)
 
             ## Atari environment wrappers
@@ -205,8 +207,9 @@ class MakeEnvironment:
                 if "request_for_args" in stack[index]:
                     for rfa in stack[index]["request_for_args"]:
                         logger("  Adding argument {} to the wrapper {}".format(rfa, stack[index]["name"]))
-                        if rfa == "session":
-                            stack[index]["args"]["session"] = self.session
+                        if rfa == "session_state":
+                            if self.session:
+                                stack[index]["args"]["session_state"] = self.session.state
                         # TODO: Move the "mode" to optional parameter that can be requested!
                         # elif rfa == "mode":
                         #     stack[index]["args"]["mode"] = self.mode
