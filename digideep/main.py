@@ -20,6 +20,7 @@ def main(session):
         logger.warn("-"*50)
 
         runner = session.load_runner()
+        # runner.override(session.args["override"])
         # params = runner.params
     else:
         ##########################################
@@ -58,16 +59,21 @@ def main(session):
     # 2. Initializing: It will load_state_dicts if we are in loading mode
     runner.start(session)
     
-    # 3. Train/Enjoy
+    # 3. Train/Enjoy/Custom Loops
     if session.is_playing:
         runner.enjoy()
+    elif session.is_customs:
+        runner.custom()
     else:
         runner.train()
     ##########################################
 
-if __name__ == "__main__":
+def entrypoint():
     session = Session(root_path=os.path.dirname(os.path.realpath(__file__)))
     try:
         main(session)
     finally:
         session.finalize()
+
+if __name__ == "__main__":
+    entrypoint()
