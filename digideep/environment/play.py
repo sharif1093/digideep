@@ -64,6 +64,7 @@ if __name__=="__main__":
                     if not args.no_action:
                         # Take a random action
                         action = env.action_space.sample()
+                        # action = OrderedDict( {'agent':[1.], 'demonstrator':[0.0]} )
                         observation, reward, done, info = env.step(action)
         finally:
             print("We are executing finally!")
