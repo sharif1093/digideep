@@ -62,12 +62,14 @@ def set_rng_state(states):
     torch_cuda_states = [torch.tensor(s) for s in states['torch_cuda']]
     torch.set_rng_state(torch_states)
     torch.cuda.set_rng_state_all(torch_cuda_states)
+    # logger.fatal(">> 2 rands after load:", np.random.rand(), np.random.rand())
 def get_rng_state():
     states = {}
     states['numpy'] = np.random.get_state()
     states['random'] = random.getstate()
     states['torch'] = torch.get_rng_state().numpy()
     states['torch_cuda'] = [s.numpy() for s in torch.cuda.get_rng_state_all()]
+    # logger.fatal(">> 2 rands after save:", np.random.rand(), np.random.rand())
     return states
 
 def get_module(addr):

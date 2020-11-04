@@ -21,7 +21,7 @@ class StatLogger():
         self.monitor_cpu = monitor_cpu
         self.monitor_gpu = monitor_gpu
 
-        # TODO: Why do we need this?
+        # TODO: Why do we need this? To check if GPU is available or not?!
         if not "CUDA_VISIBLE_DEVICES" in os.environ:
             self.monitor_gpu = False
 

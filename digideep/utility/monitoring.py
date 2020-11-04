@@ -62,7 +62,7 @@ class Monitor(object):
         ...   monitor('loop index', i)
         ...
         >>> print(monitor)
-        >> loop index [1000x] = 499.5 (±577.639 %95) in range{0 < 999}
+        >> loop index [1000x] = 499.5 (+-577.639 %95) in range{0 < 999}
     
     Todo:
         Provide batched monitoring of variables.

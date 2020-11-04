@@ -3,6 +3,7 @@ https://github.com/docker/docker/blob/master/pkg/namesgenerator/names-generator.
 """
 
 from random import choice
+import os, argparse, datetime
 
 ADJECTIVES = [
         "admiring",
@@ -502,9 +503,6 @@ PEOPLE = [
         # Marie-Jeanne de Lalande - French astronomer, mathematician and cataloguer of stars - https://en.wikipedia.org/wiki/Marie-Jeanne_de_Lalande
         "lalande",
 
-        # Hedy Lamarr - Actress and inventor. The principles of her work are now incorporated into modern Wi-Fi, CDMA and Bluetooth technology. https://en.wikipedia.org/wiki/Hedy_Lamarr
-        "lamarr",
-
         # Leslie B. Lamport - American computer scientist. Lamport is best known for his seminal work in distributed systems and was the winner of the 2013 Turing Award. https://en.wikipedia.org/wiki/Leslie_Lamport
         "lamport",
 
@@ -833,3 +831,29 @@ PEOPLE = [
 def get_random_name(seperator='_'):
     return "{}{}{}".format(choice(ADJECTIVES), seperator, choice(PEOPLE))
         # Created by pyminifier (https://github.com/liftoff/pyminifier)
+
+
+def generateTimestamp():
+    # Always uses UTC as timezone
+    now = datetime.datetime.now()
+    timestamp = '{:%Y%m%d%H%M%S}'.format(now)
+    return timestamp
+
+def make_unique_path_session(path_base_session, prefix="session_"):
+    session_name = prefix + generateTimestamp() + "_" + get_random_name()
+    path_session = os.path.join(path_base_session, session_name)
+    try:
+        os.makedirs(path_session)
+        return path_session
+    except FileExistsError as e:
+        return make_unique_path_session(path_base_session=path_base_session, prefix=prefix)
+
+
+if __name__=="__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--base', metavar=('<path>'), default='/tmp/digideep_sessions', type=str, help="The path to store the sessions. Default is in /tmp")
+    parser.add_argument('--pre', metavar=('<path>'), default='session_', type=str, help="Load a checkpoint to resume training from that point.")
+    # parser.add_argument('--session-name', metavar=('<name>'), default='', type=str, help="A default name for the session. Random name if not provided.")
+    args = parser.parse_args()
+
+    print(os.path.split(make_unique_path_session(args.base, args.pre))[1])
