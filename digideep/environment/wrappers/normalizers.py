@@ -55,8 +55,9 @@ class VecNormalizeObsDict(VecEnvWrapper):
     def __init__(self, venv, mode, paths, clip=10., epsilon=1e-8):
         VecEnvWrapper.__init__(self, venv)
 
+        # TODO: Find a more elegant way for controlling wrapper activation in environments.
         # self.training = True if mode == "train" else False
-        self.training = False if mode in ["test", "eval"] else True
+        self.training = False if mode in ["test", "eval", "custom"] else True
 
         self.paths = paths
         # Check all entries
