@@ -46,8 +46,10 @@ class Memory:
         logger.warn("Saving memory to:", filename+".npz")
         np.savez(filename, **self.buffer)
         logger.warn("Taking memory snapshot finished in {:.2f} seconds...".format(time.time() - t))
+        
         # NOTE: Now that we have successfully saved current checkpoint, we can remove old checkpoints.
         if not self.params["keep_old_checkpoints"]:
+            # TODO: Do not delete old checkpoints if we are still there.
             # Go and find the memory checkpoint that we started from.
             if self.session.state["checkpoint_name"] and self.session.is_loading:
                 dirname = os.path.join(self.session.state["path_memsnapshot"], self.session.state["checkpoint_name"])
@@ -236,10 +238,10 @@ class Memory:
         
         # dataformats=NCHW, NHWC, CHW, HWC, HW, WH
 
-        # shape = chunk["/observations/camera"][0,0].shape
         # cam_batch = chunk["/observations/camera"][0,0]
 
         ## Sequence of images as stacking
+        # shape = chunk["/observations/camera"][0,0].shape
         # self.session.writer.add_images(tag=self.params["name"]+"_images", 
         #                                img_tensor=chunk["/observations/camera"][0,0].reshape(shape[0],1,shape[1],shape[2]),
         #                                global_step=self.state['frame'],
@@ -261,8 +263,6 @@ class Memory:
         
         
         self.state['frame'] += 1
-        
-        
 
         
         ## Assertions
