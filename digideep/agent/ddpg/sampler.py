@@ -23,13 +23,14 @@ def get_sample_memory(memory, info):
     batch_size = info["batch_size"]
     observation_path = info["observation_path"]
     # Whether to use CER or not:
-    use_cer = info.get("use_cer", False)
+    # use_cer = info.get("use_cer", False)
     
     # Get the main data from the memory
     buffer = memory.get_buffer()
 
     # Get some constants from the memory
     num_workers = memory.get_num_batches()
+    # num_records = memory.length * num_workers
     N = memory.get_last_trans_index() - 1 # We don't want to consider the last "incomplete" record, hence "-1"
 
     record_arr = memory.get_index_valid_elements()
@@ -47,37 +48,38 @@ def get_sample_memory(memory, info):
         return None
 
     with KeepTime("sampling_by_choice"):
-        if use_cer:
-            last_chunk_indices = memory.get_index_valid_last_chunk()
-            available_batch_size = len(last_chunk_indices) * num_workers
-            if available_batch_size <= batch_size:
-                # We have selected a few transitions from previous step.
-                # Now, we should sample the rest from the replay buffer.
-                sample_record_recent = np.repeat(last_chunk_indices, num_workers)   # 10 10 10 10 11 11 11 11 ...
-                sample_worker_recent = np.tile(worker_arr, len(last_chunk_indices)) #  0  1  2  3  0  1  2  3 ...
-
-                batch_size_prime = batch_size - available_batch_size
-
-                # Select the rest ...
-                sample_record_prime = np.random.choice(record_arr, batch_size_prime, replace=True)
-                sample_worker_prime = np.random.choice(worker_arr, batch_size_prime, replace=True)
-
-                # Combine
-                sample_record = np.concatenate([sample_record_recent, sample_record_prime])
-                sample_worker = np.concatenate([sample_worker_recent, sample_worker_prime])
-
-            else:
-                # OK, we have enough data, so no sampling!
-                logger.warn("CER: Latest transitions greater than batch size. Sample from last transitions.")
-                
-                sample_record = np.random.choice(last_chunk_indices, batch_size, replace=True)
-                sample_worker = np.random.choice(worker_arr,         batch_size, replace=True)
-
-        else:    
-            # NOTE: NEVER ever use sampling WITHOUT replacement: Its time scales up with th array size.
-            # Sampling with replacement:
-            sample_record = np.random.choice(record_arr, batch_size, replace=True)
-            sample_worker = np.random.choice(worker_arr, batch_size, replace=True)
+        # if use_cer:
+        #     last_chunk_indices = memory.get_index_valid_last_chunk()
+        #     available_batch_size = len(last_chunk_indices) * num_workers
+        #     if available_batch_size <= batch_size:
+        #         # We have selected a few transitions from previous step.
+        #         # Now, we should sample the rest from the replay buffer.
+        #         sample_record_recent = np.repeat(last_chunk_indices, num_workers)   # 10 10 10 10 11 11 11 11 ...
+        #         sample_worker_recent = np.tile(worker_arr, len(last_chunk_indices)) #  0  1  2  3  0  1  2  3 ...
+        # 
+        #         batch_size_prime = batch_size - available_batch_size
+        # 
+        #         # Select the rest ...
+        #         sample_record_prime = np.random.choice(record_arr, batch_size_prime, replace=True)
+        #         sample_worker_prime = np.random.choice(worker_arr, batch_size_prime, replace=True)
+        # 
+        #         # Combine
+        #         sample_record = np.concatenate([sample_record_recent, sample_record_prime])
+        #         sample_worker = np.concatenate([sample_worker_recent, sample_worker_prime])
+        #     else:
+        #
+        #         # OK, we have enough data, so no sampling!
+        #         logger.warn("CER: Latest transitions greater than batch size. Sample from last transitions.")
+        #         
+        #         sample_record = np.random.choice(last_chunk_indices, batch_size, replace=True)
+        #         sample_worker = np.random.choice(worker_arr,         batch_size, replace=True)
+        #
+        # else:    
+        
+        # NOTE: NEVER ever use sampling WITHOUT replacement: Its time scales up with the array size.
+        # Sampling with replacement:
+        sample_record = np.random.choice(record_arr, batch_size, replace=True)
+        sample_worker = np.random.choice(worker_arr, batch_size, replace=True)
 
         # Move the next step samples
         sample_record_2 = memory.get_index_move_n_steps(sample_record, 1)
