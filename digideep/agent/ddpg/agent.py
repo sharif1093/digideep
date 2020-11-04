@@ -151,9 +151,11 @@ class Agent(AgentBase):
             # Use target actor exploitation policy here for loss evaluation
             a2 = self.policy.model["actor_target"](o2).detach()
             next_val = self.policy.model["critic_target"](o2, a2).detach()
+            # next_val = torch.squeeze(self.policy.model["critic_target"](o2, a2).detach())
             
             # y_target = r + gamma * Q'( s2, pi'(s2))
             # NOTE: THIS SENTENCE IS VERY IMPORTANT!
+            # r1 = torch.squeeze(r1)
             r1 = r1
             y_target = r1 + masks * next_val * float(self.params["methodargs"]["gamma"])
             
@@ -162,6 +164,7 @@ class Agent(AgentBase):
 
             # y_pred = Q( s1, a1)
             y_predicted = self.policy.model["critic"](o1, a1)
+            # y_predicted = torch.squeeze(self.policy.model["critic"](o1, a1))
             # compute critic loss, and update the critic
             # smooth_l1_loss: Calculates l2 norm near zero and l1 elsewhere
 
