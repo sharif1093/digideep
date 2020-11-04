@@ -25,7 +25,30 @@ def moving_average(array, window_size=5, mode='full'):
         print("Size is reduced!")
         return ma
 
+def get_signal_ma(signal, window_size=None):
+    shape = signal.shape
+    # print("   >>>> num =", num)
+    assert len(shape) <= 2, "Moving average supports 0 and 1 dimensional arrays."
+    if len(shape) == 1:
+        signal = signal.reshape(*shape,1)
+        # Update shape then:
+        shape = signal.shape
+
+    num = shape[0]
+    dim = shape[1]
+
+    window_size = window_size or np.max([int(num/15),5])
+    signal_ma = np.stack([moving_average(signal[:,index], window_size=window_size, mode='full') for index in range(dim)], axis=1)
+    # Shape of signal_ma is (num, dim) now.
+    return signal_ma
+
+
 def trim_to_shortest(signals):
+    """
+    This function only cuts on the first axis of signals[0].
+    Initial shape: signals[stack_dim,      signal_length, signal_dim]
+    Final shape:   signals[stack_dim, min(signal_length), signal_dim]
+    """
     length = len(signals[0])
     for sig in signals:
         length = min(len(sig), length)
@@ -35,11 +58,7 @@ def trim_to_shortest(signals):
 
     return signals
 
-def get_signal_ma(signal, window_size=None):
-    num = len(signal)
-    window_size = window_size or np.max([int(num/15),5])
-    signal_ma = moving_average(signal, window_size=window_size, mode='full')
-    return signal_ma
+
 
 ## A class for plotting
 # https://stackoverflow.com/questions/9622163/save-plot-to-image-file-instead-of-displaying-it-using-matplotlib/9890599
@@ -55,39 +74,26 @@ class VarPlot (BasePlotter):
     #     self.options = options
     #     # Keys: ['epoch', 'frame', 'episode',   'std', 'num', 'min', 'max', 'sum']
 
-    def plot(self, key):
-        """
-        This function plots the reward function and saves the `.png`, `.pdf`, and `.pkl` files.
+    def plot(self, keyx="epoch", keyy=None):
+        # keyx: episode, epoch, frame, clock, etc.
+
+        # assert len(keys) == 1, "We only support a single key at the moment."
+        # key = keys[0]
         
-        To later reload the `.pkl` file, one can use the following (to change format, labels, etc.):
-
-        Example:
-
-            import matplotlib.pyplot as plt
-            %matplotlib notebook
-            import pickle
-            ax = pickle.load( open( "path_to_pkl_figure.pkl", "rb" ) )
-            ax.set_title("Alternative title")
-            plt.show()
-        
-        See:
-            https://stackoverflow.com/a/12734723
-
-        """
         fig, ax = self.init_plot()
-        abscissa_key = self.options.get("abscissa_key", "episode") # episode | epoch | frame | clock
+        
         limits = [None, None, None, None]
 
-        for subloaders in self.loaders:
+        for index, subloaders in enumerate(self.loaders):
             varlogs = [l.getVarlogLoader() for l in subloaders]
-            new_limit = self.plot_stack(fig, ax, varlogs, key, abscissa_key)
-            limits = self.update_plot_limits(limits, new_limit)
+            new_limit = self._plot_stack(fig, ax, index, varlogs, keyx, keyy)
+            limits = self._update_plot_limits(limits, new_limit)
         
-        self.set_plot_options(fig, ax, abscissa_key, limits)
-        self.close_plot(fig, ax, path=self.output_dir, name=get_os_friendly_name(key))
+        self._set_plot_options(fig, ax, keyx, limits)
+        self.close_plot(fig, ax, path=self.output_dir, name=get_os_friendly_name(keyy))
 
 
-    def update_plot_limits(self, limits, new_limit):
+    def _update_plot_limits(self, limits, new_limit):
         for i in [0, 2]: # x_min and y_min
             if limits[i] is not None:
                 limits[i] = min(limits[i], new_limit[i])
@@ -100,37 +106,84 @@ class VarPlot (BasePlotter):
                 limits[i] = new_limit[i]
         return limits
 
-    def plot_stack(self, fig, ax, varlogs, key, abscissa_key):
+    def _plot_stack(self, fig, ax, index, log_stack, keyx, keyy):
         ###########################################
         ### Get ordinate and abscissa from keys ###
         ###########################################
         # Ordinate
-        window_size = self.options.get("window_size", 5)
-        ordinate_stack_ave = [var[key]["sum"]/var[key]["num"] for var in varlogs]
-        ordinate_stack_min = [var[key]["min"] for var in varlogs]
-        ordinate_stack_max = [var[key]["max"] for var in varlogs]
+        window_size_arg = self.options.get("window_size", 5)
+        if isinstance(window_size_arg, list):
+            if index < len(window_size_arg):
+                window_size = window_size_arg[index]
+            else:
+                window_size = 5
+                print("WARNING: We are using default window_size for index", index)
+        else:
+            window_size = window_size_arg
 
-        ordinate_stack_ave_ma = [get_signal_ma(signal, window_size=window_size) for signal in ordinate_stack_ave]
-        # Choose the shortest signal from all loaders. Because they are all going to be shown on the same plot.
-        stack = trim_to_shortest(ordinate_stack_ave_ma)
-        ordinate_max = np.max(stack,  axis=0)
-        ordinate_min = np.min(stack,  axis=0)
-        ordinate_ave = np.mean(stack, axis=0)
+        # log_stack[0][keyy]
         
-        # Abscissa
-        abscissa_all = [var[key][abscissa_key] for var in varlogs]
+        ## Processing abscissa
+        abscissa_all = [var[keyy][keyx] for var in log_stack]
         abscissa_all_trimmed = trim_to_shortest(abscissa_all)
         abscissa = abscissa_all_trimmed[0]
 
-        if abscissa_key == "clock":
+        if keyx == "clock":
             abscissa = abscissa - abscissa[0]
+        
 
+        ## Processing ordinate
+        ordinate_stack_ave = []
+        for var in log_stack:
+            # Obtain sizes:
+            shape_sum = var[keyy]["sum"].shape
+            shape_num = var[keyy]["num"].shape
+
+            assert len(shape_sum) <= 2, "We only support scalars and 1d arrays as data."
+            assert len(shape_num) <= len(shape_sum), "Shape of numbers should be less than shape of main data"
+            assert shape_num[0] == shape_sum[0], "The first dimension of num and sum should be the same."
+
+            shape = list(shape_num)
+            while len(shape) < len(shape_sum):
+                shape.append(1)
+
+            ordinate_stack_ave += [var[keyy]["sum"]/var[keyy]["num"].reshape(shape)]
+
+        
+        
+        ## TODO: We can use min and max if there is only one loader and users wants us to do so.
+        # ordinate_stack_min = [var[key]["min"] for var in log_stack]
+        # ordinate_stack_max = [var[key]["max"] for var in log_stack]
+
+        ordinate_stack_ave_ma = [get_signal_ma(signal, window_size=window_size) for signal in ordinate_stack_ave]
+        # Choose the shortest signal from all loaders. Because they are all going to be shown on the same plot.
+        stack = np.array(trim_to_shortest(ordinate_stack_ave_ma))
+        # stack = trim_to_shortest(ordinate_stack_ave_ma)
+        ordinate_max = np.max(stack,  axis=0)
+        ordinate_min = np.min(stack,  axis=0)
+        ordinate_ave = np.mean(stack, axis=0)
+
+        dim = ordinate_ave.shape[1]
+        
+        # print("ordinate_max.shape", ordinate_max.shape)
+        # print(dim)
+        # print("ordinate_min.shape", ordinate_min.shape)
+        # print("ordinate_ave.shape", ordinate_ave.shape)
+        # exit()
+
+        # print("ordinate_max shape:", ordinate_max.shape)
+        # print("stack shape:", stack.shape)
+        # print("sum shape:", ordinate_stack_ave[0].shape)
+        # print("-"*25)
+        # # exit()
+        
         ##################################
         ### Plot and fill the variance ###
         ##################################
-        ax.plot(abscissa, ordinate_ave) # linewidth=1.5
-        ax.fill_between(abscissa, ordinate_max, ordinate_min, alpha=0.2) # color='gray'
-
+        for d in range(dim):
+            ax.plot(abscissa, ordinate_ave[:,d]) # linewidth=1.5
+            ax.fill_between(abscissa, ordinate_max[:,d], ordinate_min[:,d], alpha=0.2) # color='gray'
+        
         xlim_min = np.min(abscissa)
         xlim_max = np.max(abscissa)
         ylim_min = np.min(ordinate_min)
@@ -138,7 +191,7 @@ class VarPlot (BasePlotter):
         return (xlim_min, xlim_max, ylim_min, ylim_max)
 
 
-    def set_plot_options(self, fig, ax, abscissa_key, limits):
+    def _set_plot_options(self, fig, ax, abscissa_key, limits):
         #########################
         ### Set plot settings ###
         #########################

@@ -196,7 +196,7 @@ def whiten_hierarchy(level_labels, level_values, level_colors):
 ### The Profile Plotter Class ###
 #################################
 class ProPlot (BasePlotter):
-    def plot(self):
+    def plot(self, keyx=None, keyy="/"):
         """
         This function plots the reward function and saves the `.ext` and `.pkl` files.
         
@@ -215,6 +215,13 @@ class ProPlot (BasePlotter):
             https://stackoverflow.com/a/12734723
 
         """
+        # assert len(keys) == 1, "We only support a single key at the moment."
+        # root = keys[0]
+        # root = self.options.get("root", "/")
+        
+        root = keyy
+        
+
         fig, ax = self.init_plot()
 
         if len(self.loaders) > 1:
@@ -228,8 +235,6 @@ class ProPlot (BasePlotter):
         # Preparing data for plotting
         prolog = subloader.getPrologLoader()
         cum, num, avg = aggregate_prolog(prolog)
-
-        root = self.options.get("root", "/")
 
         if not root in cum:
             raise ValueError("The root:'{}' does not exist in the logged values.".format(root))
@@ -257,12 +262,12 @@ class ProPlot (BasePlotter):
         # Whiten the other labels and colors
         level_labels, level_values, level_colors = whiten_hierarchy(level_labels, level_values, level_colors)
 
-        bbox_extra_artists = self.plot_pie_chart(fig, ax, level_labels, level_values, level_colors)
+        bbox_extra_artists = self._plot_pie_chart(fig, ax, level_labels, level_values, level_colors)
         ax.set_title("Time: {:4.2f} hours".format(overall_time/3600.))
 
         self.close_plot(fig, ax, path=self.output_dir, name="profiler_"+get_os_friendly_name(root), bbox_extra_artists=bbox_extra_artists, save_pickle=False)
 
-    def plot_pie_chart(self, fig, ax, level_labels, level_values, level_colors):
+    def _plot_pie_chart(self, fig, ax, level_labels, level_values, level_colors):
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.3, box.height])
         legends = []
