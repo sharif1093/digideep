@@ -115,7 +115,6 @@ class Runner:
         self.instantiate()
         self.load()
         self.override()
-        
 
         # NOTE: We lazily connect signals so it is not spawned in the child processes.
         self.lazy_connect_signal()
@@ -124,7 +123,7 @@ class Runner:
         #       Because all future loading would
         #       involve actual loading of states.
         self.state["loading"] = True
-    
+
 
     def instantiate(self):
         """
@@ -153,9 +152,15 @@ class Runner:
         self.explorer = {}
         explorer_list.remove("eval")
         for e in explorer_list:
+            # if e == "eval":
+            #     continue
             self.explorer[e] = Explorer(self.session, agents=self.agents, **self.params["explorer"][e])
         # "eval" must be created as the last explorer to avoid GLFW connection to X11 issues.
-        self.explorer["eval"]  = Explorer(self.session, agents=self.agents, **self.params["explorer"]["eval"])
+        # if "eval" in self.explorer:
+        # NOTE: We have made creation of "eval" explorer conditioned on the session being playing.
+        #       This is to make sure that no connections to X11 exist in the main thread.
+        if self.session.is_playing:
+            self.explorer["eval"]  = Explorer(self.session, agents=self.agents, **self.params["explorer"]["eval"])
         
 
     ###############################################################
@@ -185,6 +190,9 @@ class Runner:
             ## We used to save only states of the train explorer:
             # if not explorer_name in ["train"]:
             #     continue
+            # OLD LOGIC
+            # if explorer_name in ["test", "eval"]:
+            #     continue
             explorer_state[explorer_name] = self.explorer[explorer_name].state_dict()
 
         memory_state = {}
@@ -192,6 +200,7 @@ class Runner:
             memory_state[memory_name] = self.memory[memory_name].state_dict()
         
         return {'random_state':random_state, 'agents':agents_state, 'explorer':explorer_state, 'memory':memory_state}
+    
     def load_state_dict(self, state_dict):
         """
         This function will load the states of the internal objects:
@@ -209,12 +218,15 @@ class Runner:
         
         explorer_state = state_dict['explorer']
         for explorer_name in explorer_state:
+            if explorer_name == "eval":
+                continue
             self.explorer[explorer_name].load_state_dict(explorer_state[explorer_name])
 
         memory_state = state_dict['memory']
         for memory_name in memory_state:
             self.memory[memory_name].load_state_dict(memory_state[memory_name])
 
+        ## NEWER LOGIC
         # We do intentionally update the state of test/eval explorers with the state of "train" explorer.
         # We are only interested in states of the reward/observation normalizers.
         # for explorer_name in self.explorer:
@@ -225,6 +237,18 @@ class Runner:
         #     logger.warn("Loading explorer '{}' states from 'train'.".format(explorer_name))
         #     self._sync_normalizations(source_explorer="train", target_explorer=explorer_name)
 
+        ## OLD LOGIC
+        # # We do intentionally update the state of test/eval explorers with the state of "train" explorer.
+        # # We are only interested in states of the reward/observation normalizers.
+        # self._sync_normalizations(source_explorer="train", target_explorer="test")
+        # self._sync_normalizations(source_explorer="train", target_explorer="eval")
+        #
+        # # self.explorer["test"].load_state_dict(self.explorer["train"].state_dict())
+        # # self.explorer["eval"].load_state_dict(self.explorer["train"].state_dict())
+        #
+        # self.explorer["test"].reset()
+        # self.explorer["eval"].reset()
+    
     ###
     def override(self):
         pass
@@ -354,18 +378,18 @@ class Runner:
         return termination
     
 
-    def finalize(self, train=True):
+    def finalize(self, save=True):
         logger.fatal('End of operation ...')
-        if train:
-            # Mark session as done if we have went through all epochs.
-            # if self.state["i_epoch"] == self.state["n_epochs"]:
-            if self.state["i_epoch"] == self.params["runner"]["n_epochs"]:
-                self.session.mark_as_done()
-                self.save_major_checkpoint = True
-            
-            if self.save_major_checkpoint:
-                self.save_final_checkpoint()
-                # self.save_major_checkpoint = False
+        
+        # Mark session as done if we have went through all epochs.
+        # if self.state["i_epoch"] == self.state["n_epochs"]:
+        if self.state["i_epoch"] == self.params["runner"]["n_epochs"]:
+            self.session.mark_as_done()
+            self.save_major_checkpoint = True
+        
+        if save and self.save_major_checkpoint:
+            self.save_final_checkpoint()
+            # self.save_major_checkpoint = False
         
         # Close all explorers benignly:
         for key in self.explorer:
@@ -400,6 +424,10 @@ class Runner:
 
             log()
         """
+        # TODO: We need more elegant mechanisms to handle this import.
+        import glfw
+        glfw.init()
+
         try:
             self._sync_normalizations(source_explorer="train", target_explorer="eval")
             self.explorer["eval"].reset()
@@ -417,8 +445,10 @@ class Runner:
         except (KeyboardInterrupt, SystemExit):
             logger.fatal('Operation stopped by the user ...')
         finally:
-            self.finalize(train=False)
+            self.finalize(save=False)
 
+    def custom(self):
+        raise NotImplementedError()
 
     #####################
     def _sync_normalizations(self, source_explorer, target_explorer):
