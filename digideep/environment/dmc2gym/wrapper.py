@@ -8,7 +8,6 @@ from gym.utils import seeding
 from gym.utils import EzPickle
 
 import numpy as np
-import random
 import collections
 import sys
 import copy
@@ -84,7 +83,7 @@ class DmControlWrapper(Env, EzPickle):
         self._viewers = {key:None for key in self.metadata['render.modes']}
 
         # set seed
-        self.seed()
+        self.seed_value = self.seed()
         EzPickle.__init__(self)
     
     def _delayed_init(self):
@@ -118,15 +117,22 @@ class DmControlWrapper(Env, EzPickle):
         Returns:
             float: The control timestep of the environment.
         """
+
         return self.dmcenv.control_timestep()
 
     def seed(self, seed=None):
         """Seeds the environment.
         """
-        # random.seed(seed) # OK??
-        # np.random.seed(seed)
-        self.np_random, seed = seeding.np_random(seed)
-        self.dmcenv.task._random = self.np_random
+        # self.np_random, seed = seeding.np_random(seed)
+
+        # TODO: Seems we should leave seed=None to be able to get those nice seeds.
+        # TODO: Output this seed to be used later.
+        self.np_random, seed = seeding.np_random()
+        print(">>>> In wrapper seed is set to:", seed)
+        # TODO: Does self._random in our dm environment really use this self.dmcenv.task._random?
+        # self.dmcenv.task._random = self.np_random
+        self.dmcenv.task.np_random = self.np_random
+
         return [seed]
     
     def _extract_obs_info(self, observation):
