@@ -19,7 +19,7 @@ class VecFrameStackAxis(VecEnvWrapper):
     Args:
         venv: The VecEnv environment to be wrapped.
         nstack (int): Number of observations to be stacked in that axis.
-        axis (int): The axis of that observations to be used for stacking. This is usually the index of the CHANNEL dimension.
+        axis (int): The axis of those observations to be used for stacking.
 
     Inspired by `baselines <https://github.com/openai/baselines/blob/master/baselines/common/vec_env/vec_frame_stack.py>`__.
     """
@@ -34,16 +34,12 @@ class VecFrameStackAxis(VecEnvWrapper):
         self.path = path
         self.axis = axis
         self.nstack = nstack
-
-        if self.axis >= 0:
-            self.axis_ref = self.axis+1
-        else:
-            self.axis_ref = self.axis
         
         observation_space = venv.observation_space
         wos = observation_space.spaces[self.path]  # wrapped ob space
+
         
-        ## This shape0 is in [1,3]. Because this is equivalent to channels?
+        ## This shape0 is in [1,3].
         self.axis_dim = wos.shape[axis]
         low  = np.repeat(wos.low,  self.nstack, axis=self.axis)
         high = np.repeat(wos.high, self.nstack, axis=self.axis)
@@ -58,24 +54,19 @@ class VecFrameStackAxis(VecEnvWrapper):
     def step_wait(self):
         obs, rews, news, infos = self.venv.step_wait()
         # This throwing old history out by rolling.
-        
-        self.stacked_obs = np.roll(self.stacked_obs, shift=-self.axis_dim, axis=self.axis_ref)
-
+        self.stacked_obs = np.roll(self.stacked_obs, shift=-self.axis_dim, axis=self.axis)
         # If an episode is reset, remove the history.
         for (i, new) in enumerate(news):
             if new:
                 self.stacked_obs[i] = 0
         
         # We are using slice because these are not numpy arrays yet.
-        ind=[slice(None)]*(len(self.stacked_obs.shape))
-        ind[self.axis_ref] = slice(-self.axis_dim, None)
+        ind=[slice(None)]*(len(self.stacked_obs.shape)); ind[1+self.axis] = slice(-self.axis_dim, None)
         self.stacked_obs[tuple(ind)] = obs[self.path]
-        
 
-        # QUESTION: Why type is different before/after?
-        # ANSWER: It was not differnt in a test conducted on 2020/07/19
-        obs[self.path] = self.stacked_obs.astype(obs[self.path].dtype)
-        # obs[self.path] = self.stacked_obs.astype(np.float32)
+        # TODO: Why type is different before/after?
+        # obs[self.path] = self.stacked_obs.astype(obs[self.path].dtype)
+        obs[self.path] = self.stacked_obs.astype(np.float32)
 
         # return self.stacked_obs, rews, news, infos
         return obs, rews, news, infos
@@ -84,8 +75,7 @@ class VecFrameStackAxis(VecEnvWrapper):
         obs = self.venv.reset()
         self.stacked_obs[...] = 0
         
-        ind=[slice(None)]*(len(self.stacked_obs.shape))
-        ind[self.axis_ref] = slice(-self.axis_dim, None)
+        ind=[slice(None)]*(len(self.stacked_obs.shape)); ind[1+self.axis] = slice(-self.axis_dim, None)
         self.stacked_obs[tuple(ind)] = obs[self.path]
         obs[self.path] = self.stacked_obs
         
